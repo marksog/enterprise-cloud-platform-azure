@@ -1,0 +1,10 @@
+org_prefix                 = "sog"
+location                   = "eastus"
+unique_suffix              = "001"
+
+account_tier               = "Standard"
+account_replication_type   = "GRS"
+
+https_traffic_only_enabled = true
+
+bootstrap_allowed_ip       = "<YOUR_PUBLIC_IP>"

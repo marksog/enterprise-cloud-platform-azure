@@ -30,3 +30,16 @@ terraform.tfvars
 
 # JetBrains
 .idea/
+
+# Terraform execution plans
+*.tfplan
+
+# Local Terraform state
+terraform.tfstate
+terraform.tfstate.*
+
+# Terraform working directory
+.terraform/
+
+# Plan files
+*.tfplan
