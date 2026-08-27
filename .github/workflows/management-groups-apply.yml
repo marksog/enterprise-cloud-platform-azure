@@ -8,13 +8,110 @@ on:
       - "terraform/management-groups/**"
       - ".github/workflows/management-groups-apply.yml"
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
-  apply:
-    name: Apply management groups
+  plan:
+    name: Plan on Main
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform/management-groups
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Placeholder step
-        run: echo "Add Terraform init/plan/apply steps here"
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.5
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_MG_DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: terraform init -input=false
+        env:
+          ARM_USE_OIDC: true
+          ARM_USE_AZUREAD: true
+          ARM_CLIENT_ID: ${{ vars.AZURE_MG_DEPLOY_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=mg.tfplan
+        env:
+          ARM_USE_OIDC: true
+          ARM_USE_AZUREAD: true
+          ARM_CLIENT_ID: ${{ vars.AZURE_MG_DEPLOY_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: management-groups-plan
+          path: terraform/management-groups/mg.tfplan
+  
+    apply:
+      name: Apply Management Groups
+      runs-on: ubuntu-latest
+      needs: plan
+  
+      environment:
+        name: tenant-governance
+  
+      defaults:
+        run:
+          working-directory: terraform/management-groups
+  
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+  
+        - name: Setup Terraform
+          uses: hashicorp/setup-terraform@v3
+          with:
+            terraform_version: 1.15.5
+  
+        - name: Azure login with OIDC
+          uses: azure/login@v2
+          with:
+            client-id: ${{ vars.AZURE_MG_DEPLOY_CLIENT_ID }}
+            tenant-id: ${{ vars.AZURE_TENANT_ID }}
+            subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  
+        - name: Terraform Init
+          run: terraform init -input=false
+          env:
+            ARM_USE_OIDC: true
+            ARM_USE_AZUREAD: true
+            ARM_CLIENT_ID: ${{ vars.AZURE_MG_DEPLOY_CLIENT_ID }}
+            ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+            ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  
+        - name: Download Terraform Plan
+          uses: actions/download-artifact@v4
+          with:
+            name: management-groups-plan
+            path: terraform/management-groups
+  
+        - name: Terraform Apply
+          run: terraform apply -input=false -auto-approve mg.tfplan
+          env:
+            ARM_USE_OIDC: true
+            ARM_USE_AZUREAD: true
+            ARM_CLIENT_ID: ${{ vars.AZURE_MG_DEPLOY_CLIENT_ID }}
+            ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+            ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
