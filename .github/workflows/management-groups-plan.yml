@@ -27,3 +27,9 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.15.5
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+      - name: Terraform Init
+        run: terraform init -input=false
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=tfplan
