@@ -21,6 +21,7 @@ terraform.rc
 # Variable files containing secrets
 *.auto.tfvars
 terraform.tfvars
+!terraform/management-groups/terraform.tfvars
 
 # macOS
 .DS_Store

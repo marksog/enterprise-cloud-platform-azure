@@ -3,10 +3,6 @@ variable "org_prefix" {
   type        = string
 }
 
-variable "organization_name" {
-  description = "Human-readable organization name."
-  type        = string
-}
 
 variable "organization_hierarchy" {
   description = "Desired management group hierarchy for the organization."
