@@ -27,9 +27,34 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.15.5
+
       - name: Azure login with OIDC
         uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_MG_PLAN_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
       - name: Terraform Init
         run: terraform init -input=false
+        env:
+          ARM_USE_OIDC: true
+          ARM_USE_AZUREAD: true
+          ARM_CLIENT_ID: ${{ vars.AZURE_MG_PLAN_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Plan
-        run: terraform plan -input=false -out=tfplan
+        run: terraform plan -input=false -no-color
+        env:
+          ARM_USE_OIDC: true
+          ARM_USE_AZUREAD: true
+          ARM_CLIENT_ID: ${{ vars.AZURE_MG_PLAN_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
