@@ -1,0 +1,29 @@
+name: Management Groups - Plan
+
+on:
+  pull_request:
+    paths:
+      - "terraform/management-groups/**"
+      - ".github/workflows/management-groups-plan.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform/management-groups
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.5
