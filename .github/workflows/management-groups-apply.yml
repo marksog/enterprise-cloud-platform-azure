@@ -1,0 +1,20 @@
+name: Management Groups - Apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/management-groups/**"
+      - ".github/workflows/management-groups-apply.yml"
+
+jobs:
+  apply:
+    name: Apply management groups
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Placeholder step
+        run: echo "Add Terraform init/plan/apply steps here"
