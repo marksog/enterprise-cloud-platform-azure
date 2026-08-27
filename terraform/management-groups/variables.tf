@@ -8,11 +8,6 @@ variable "organization_name" {
   type        = string
 }
 
-variable "org_prefix" {
-  description = "Organization prefix used to derive standardized management group IDs."
-  type        = string
-}
-
 variable "organization_hierarchy" {
   description = "Desired management group hierarchy for the organization."
 
