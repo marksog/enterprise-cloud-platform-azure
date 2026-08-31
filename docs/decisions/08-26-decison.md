@@ -84,3 +84,6 @@ Negative
 
 - Future environment-specific values should not be added to this file.
 - Secrets and environment-specific configuration remain excluded from Git.
+
+
+Replace the public GitHub runner with a private/self-hosted runner or another trusted network path, then return the storage account to defaultAction = Deny.
