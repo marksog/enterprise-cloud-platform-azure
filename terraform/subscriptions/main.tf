@@ -18,3 +18,11 @@ resource "azurerm_management_group_subscription_association" "subscriptions" {
   management_group_id = each.value.management_group_id
   subscription_id     = each.value.subscription_id
 }
+
+resource "azurerm_role_assignment" "subscription_baseline" {
+  for_each = local.rbac_assignments
+
+  scope                = each.value.scope
+  role_definition_name = each.value.role_definition_name
+  principal_id         = each.value.principal_id
+}
