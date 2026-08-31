@@ -6,7 +6,10 @@ data "terraform_remote_state" "management_groups" {
     resource_group_name  = "sog-platform-bootstrap-rg"
     storage_account_name = "sogtfstate001"
     container_name       = "tfstate"
-    key                  = "management_group.tfstate"
+    key                  = "management-groups.tfstate"
+
+    use_oidc         = true
+    use_azuread_auth = true
   }
 }
 
