@@ -1,4 +1,4 @@
-name: Policy - Plan
+name: Policy - Plan only
 
 on:
   pull_request:
