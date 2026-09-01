@@ -26,3 +26,39 @@ resource "azurerm_role_assignment" "subscription_baseline" {
   role_definition_name = each.value.role_definition_name
   principal_id         = each.value.principal_id
 }
+
+resource "azurerm_consumption_budget_subscription" "production" {
+  name            = "payments-prod-monthly-budget"
+  subscription_id = "/subscriptions/e3bda1e9-e6e9-45a5-b2ee-d3d7a754b594"
+
+  amount     = 50
+  time_grain = "Monthly"
+
+  time_period {
+    start_date = "2026-09-01T00:00:00Z"
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 80
+    operator       = "GreaterThanOrEqualTo"
+    threshold_type = "Actual"
+    contact_roles  = ["Contributor"]
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 90
+    operator       = "GreaterThanOrEqualTo"
+    threshold_type = "Actual"
+    contact_roles  = ["Contributor"]
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 100
+    operator       = "GreaterThanOrEqualTo"
+    threshold_type = "Actual"
+    contact_roles  = ["Contributor"]
+  }
+}
