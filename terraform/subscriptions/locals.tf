@@ -9,8 +9,15 @@ locals {
       subscription_id     = "/subscriptions/4eeb7aa0-684a-473d-9ae3-f238dfc3f944"
       management_group_id = data.terraform_remote_state.management_groups.outputs.nonproduction_management_group_id
     }
+
+    platform_observability = {
+      subscription_id     = "/subscriptions/1a8e995d-4fc1-485a-b192-562826ca1fc8"
+      management_group_id = data.terraform_remote_state.management_groups.outputs.platform_management_group_id
+    }
   }
 }
+
+
 
 locals {
   rbac_assignments = {
