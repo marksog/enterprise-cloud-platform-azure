@@ -1,3 +1,16 @@
+data "terraform_remote_state" "subscriptions" {
+  backend = "azurerm"
+
+  config = {
+    resource_group_name  = "sog-platform-bootstrap-rg"
+    storage_account_name = "sogtfstate001"
+    container_name       = "tfstate"
+    key                  = "subscriptions.tfstate"
+    use_azuread_auth     = true
+  }
+}
+
+
 # ============================================================
 # HUB NETWORK
 # Subscription: platform-connectivity
@@ -35,25 +48,12 @@ resource "azurerm_virtual_network" "hub" {
 # Address space: 10.10.0.0/20
 # ============================================================
 
-resource "azurerm_resource_group" "prod_network" {
-  provider = azurerm.prod
-
-  name     = "sog-prod-network-rg"
-  location = "eastus"
-
-  tags = {
-    Environment = "production"
-    Owner       = "networking-team"
-    CostCenter  = "production"
-  }
-}
-
 resource "azurerm_virtual_network" "prod" {
   provider = azurerm.prod
 
   name                = "sog-prod-spoke-vnet"
-  location            = azurerm_resource_group.prod_network.location
-  resource_group_name = azurerm_resource_group.prod_network.name
+  location            = data.terraform_remote_state.subscriptions.outputs.prod_network_resource_group_location
+  resource_group_name = data.terraform_remote_state.subscriptions.outputs.prod_network_resource_group_name
   address_space       = ["10.10.0.0/20"]
 
   tags = {
@@ -70,25 +70,12 @@ resource "azurerm_virtual_network" "prod" {
 # Address space: 10.20.0.0/20
 # ============================================================
 
-resource "azurerm_resource_group" "nonprod_network" {
-  provider = azurerm.nonprod
-
-  name     = "sog-nonprod-network-rg"
-  location = "eastus"
-
-  tags = {
-    Environment = "nonproduction"
-    Owner       = "networking-team"
-    CostCenter  = "nonproduction"
-  }
-}
-
 resource "azurerm_virtual_network" "nonprod" {
   provider = azurerm.nonprod
 
   name                = "sog-nonprod-spoke-vnet"
-  location            = azurerm_resource_group.nonprod_network.location
-  resource_group_name = azurerm_resource_group.nonprod_network.name
+  location            = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_location
+  resource_group_name = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_name
   address_space       = ["10.20.0.0/20"]
 
   tags = {
