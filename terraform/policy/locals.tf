@@ -7,6 +7,7 @@ locals {
 
   allowed_locations = [
     "eastus",
-    "eastus2"
+    "eastus2",
+    "westus3"
   ]
 }
