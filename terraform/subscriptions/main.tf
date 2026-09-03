@@ -62,3 +62,39 @@ resource "azurerm_consumption_budget_subscription" "production" {
     contact_roles  = ["Contributor"]
   }
 }
+
+# ============================================================
+# NETWORK RESOURCE GROUP CONTAINERS
+#
+# Subscription governance owns creation of the top-level
+# containers. The networking capability manages network
+# resources inside these containers.
+# ============================================================
+
+resource "azurerm_resource_group" "prod_network" {
+  provider = azurerm.prod
+
+  name     = "sog-prod-network-rg"
+  location = "eastus"
+
+  tags = {
+    Environment = "production"
+    Owner       = "networking-team"
+    CostCenter  = "production"
+    ManagedBy   = "subscription-platform"
+  }
+}
+
+resource "azurerm_resource_group" "nonprod_network" {
+  provider = azurerm.nonprod
+
+  name     = "sog-nonprod-network-rg"
+  location = "eastus"
+
+  tags = {
+    Environment = "nonproduction"
+    Owner       = "networking-team"
+    CostCenter  = "nonproduction"
+    ManagedBy   = "subscription-platform"
+  }
+}
