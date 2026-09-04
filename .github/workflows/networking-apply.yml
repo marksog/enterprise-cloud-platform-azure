@@ -29,6 +29,7 @@ jobs:
       ARM_CLIENT_ID: ${{ vars.AZURE_NETWORKING_DEPLOY_CLIENT_ID }}
       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_NETWORKING_SUBSCRIPTION_ID }}
+      TF_VAR_nva_admin_ssh_public_key: ${{ vars.NVA_ADMIN_SSH_PUBLIC_KEY }}
 
     steps:
       - name: Checkout repository
