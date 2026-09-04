@@ -14,6 +14,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: networking-terraform-state
+  cancel-in-progress: false
+
 jobs:
   plan:
     name: Deployment Plan
