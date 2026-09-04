@@ -84,3 +84,62 @@ resource "azurerm_virtual_network" "nonprod" {
     CostCenter  = "nonproduction"
   }
 }
+
+
+# ============================================================
+# VNET PEERING
+# Hub <-> Production
+# Hub <-> Non-Production
+# ============================================================
+
+resource "azurerm_virtual_network_peering" "hub_to_prod" {
+  name = "hub-to-prod"
+
+  resource_group_name       = azurerm_resource_group.hub.name
+  virtual_network_name      = azurerm_virtual_network.hub.name
+  remote_virtual_network_id = azurerm_virtual_network.prod.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  use_remote_gateways          = false
+}
+
+resource "azurerm_virtual_network_peering" "prod_to_hub" {
+  provider = azurerm.prod
+
+  name = "prod-to-hub"
+
+  resource_group_name       = data.terraform_remote_state.subscriptions.outputs.prod_network_resource_group_name
+  virtual_network_name      = azurerm_virtual_network.prod.name
+  remote_virtual_network_id = azurerm_virtual_network.hub.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  use_remote_gateways          = false
+}
+
+resource "azurerm_virtual_network_peering" "hub_to_nonprod" {
+  name = "hub-to-nonprod"
+
+  resource_group_name       = azurerm_resource_group.hub.name
+  virtual_network_name      = azurerm_virtual_network.hub.name
+  remote_virtual_network_id = azurerm_virtual_network.nonprod.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  use_remote_gateways          = false
+}
+
+resource "azurerm_virtual_network_peering" "nonprod_to_hub" {
+  provider = azurerm.nonprod
+
+  name = "nonprod-to-hub"
+
+  resource_group_name       = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_name
+  virtual_network_name      = azurerm_virtual_network.nonprod.name
+  remote_virtual_network_id = azurerm_virtual_network.hub.id
+
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  use_remote_gateways          = false
+}
