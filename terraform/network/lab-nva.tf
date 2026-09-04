@@ -16,7 +16,9 @@ resource "azurerm_public_ip" "lab_nva" {
   tags = {
     Environment = "platform"
     Owner       = "networking-team"
+    CostCenter  = "platform"
     Purpose     = "lab-nva"
+
   }
 }
 
@@ -106,6 +108,7 @@ resource "azurerm_linux_virtual_machine" "lab_nva" {
   tags = {
     Environment = "platform"
     Owner       = "networking-team"
+    CostCenter  = "platform"
     Purpose     = "lab-nva"
   }
 }
