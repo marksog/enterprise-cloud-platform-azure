@@ -22,6 +22,7 @@ resource "azurerm_route_table" "prod" {
   tags = {
     Environment = "production"
     Owner       = "networking-team"
+    CostCenter  = "production"
   }
 }
 
@@ -71,6 +72,7 @@ resource "azurerm_route_table" "nonprod" {
   tags = {
     Environment = "nonproduction"
     Owner       = "networking-team"
+    CostCenter  = "nonproduction"
   }
 }
 
