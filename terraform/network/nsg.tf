@@ -85,3 +85,60 @@ resource "azurerm_subnet_network_security_group_association" "nonprod_data" {
   subnet_id                 = azurerm_subnet.nonprod_data.id
   network_security_group_id = azurerm_network_security_group.nonprod_data.id
 }
+
+# ============================================================
+# PRODUCTION APP NSG
+# Protects prod-app-subnet
+# Ingress rules will be added when the approved ingress
+# component is deployed.
+# ============================================================
+
+resource "azurerm_network_security_group" "prod_app" {
+  provider = azurerm.prod
+
+  name                = "prod-app-nsg"
+  location            = data.terraform_remote_state.subscriptions.outputs.prod_network_resource_group_location
+  resource_group_name = data.terraform_remote_state.subscriptions.outputs.prod_network_resource_group_name
+
+  tags = {
+    Environment = "production"
+    Owner       = "networking-team"
+    CostCenter  = "production"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "prod_app" {
+  provider = azurerm.prod
+
+  subnet_id                 = azurerm_subnet.prod_app.id
+  network_security_group_id = azurerm_network_security_group.prod_app.id
+}
+
+
+# ============================================================
+# NON-PRODUCTION APP NSG
+# Protects nonprod-app-subnet
+# Ingress rules will be added when the approved ingress
+# component is deployed.
+# ============================================================
+
+resource "azurerm_network_security_group" "nonprod_app" {
+  provider = azurerm.nonprod
+
+  name                = "nonprod-app-nsg"
+  location            = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_location
+  resource_group_name = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_name
+
+  tags = {
+    Environment = "nonproduction"
+    Owner       = "networking-team"
+    CostCenter  = "nonproduction"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "nonprod_app" {
+  provider = azurerm.nonprod
+
+  subnet_id                 = azurerm_subnet.nonprod_app.id
+  network_security_group_id = azurerm_network_security_group.nonprod_app.id
+}
