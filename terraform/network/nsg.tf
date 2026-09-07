@@ -142,3 +142,64 @@ resource "azurerm_subnet_network_security_group_association" "nonprod_app" {
   subnet_id                 = azurerm_subnet.nonprod_app.id
   network_security_group_id = azurerm_network_security_group.nonprod_app.id
 }
+
+# ============================================================
+# PRODUCTION AKS NSG
+# Protects prod-aks-subnet
+#
+# Internet traffic must not reach the AKS subnet directly.
+# Ingress rules will be added when the approved ingress/WAF
+# component is deployed.
+# ============================================================
+
+resource "azurerm_network_security_group" "prod_aks" {
+  provider = azurerm.prod
+
+  name                = "prod-aks-nsg"
+  location            = data.terraform_remote_state.subscriptions.outputs.prod_network_resource_group_location
+  resource_group_name = data.terraform_remote_state.subscriptions.outputs.prod_network_resource_group_name
+
+  tags = {
+    Environment = "production"
+    Owner       = "networking-team"
+    CostCenter  = "production"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "prod_aks" {
+  provider = azurerm.prod
+
+  subnet_id                 = azurerm_subnet.prod_aks.id
+  network_security_group_id = azurerm_network_security_group.prod_aks.id
+}
+
+
+# ============================================================
+# NON-PRODUCTION AKS NSG
+# Protects nonprod-aks-subnet
+#
+# Internet traffic must not reach the AKS subnet directly.
+# Ingress rules will be added when the approved ingress/WAF
+# component is deployed.
+# ============================================================
+
+resource "azurerm_network_security_group" "nonprod_aks" {
+  provider = azurerm.nonprod
+
+  name                = "nonprod-aks-nsg"
+  location            = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_location
+  resource_group_name = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_name
+
+  tags = {
+    Environment = "nonproduction"
+    Owner       = "networking-team"
+    CostCenter  = "nonproduction"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "nonprod_aks" {
+  provider = azurerm.nonprod
+
+  subnet_id                 = azurerm_subnet.nonprod_aks.id
+  network_security_group_id = azurerm_network_security_group.nonprod_aks.id
+}
