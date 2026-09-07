@@ -65,3 +65,70 @@ resource "azurerm_private_endpoint" "prod_key_vault" {
     CostCenter  = "production"
   }
 }
+
+# ============================================================
+# NON-PRODUCTION KEY VAULT
+#
+# Non-production secrets remain inside the NonProd subscription.
+# Public network access is disabled; workloads reach the vault
+# through its Private Endpoint.
+# ============================================================
+
+resource "azurerm_key_vault" "nonprod" {
+  provider = azurerm.nonprod
+
+  name                = "sog-nonprod-kv"
+  location            = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_location
+  resource_group_name = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_name
+
+  tenant_id = data.azurerm_client_config.current.tenant_id
+  sku_name  = "standard"
+
+  rbac_authorization_enabled    = true
+  public_network_access_enabled = false
+
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = true
+
+  tags = {
+    Environment = "nonproduction"
+    Owner       = "platform-team"
+    CostCenter  = "nonproduction"
+  }
+}
+
+
+# ============================================================
+# NON-PRODUCTION KEY VAULT PRIVATE ENDPOINT
+# ============================================================
+
+resource "azurerm_private_endpoint" "nonprod_key_vault" {
+  provider = azurerm.nonprod
+
+  name                = "nonprod-keyvault-pe"
+  location            = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_location
+  resource_group_name = data.terraform_remote_state.subscriptions.outputs.nonprod_network_resource_group_name
+
+  subnet_id = azurerm_subnet.nonprod_private_endpoints.id
+
+  private_service_connection {
+    name                           = "nonprod-keyvault-connection"
+    private_connection_resource_id = azurerm_key_vault.nonprod.id
+    subresource_names              = ["vault"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name = "keyvault-dns-zone-group"
+
+    private_dns_zone_ids = [
+      azurerm_private_dns_zone.key_vault.id
+    ]
+  }
+
+  tags = {
+    Environment = "nonproduction"
+    Owner       = "networking-team"
+    CostCenter  = "nonproduction"
+  }
+}
