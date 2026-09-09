@@ -37,7 +37,7 @@ resource "azurerm_kubernetes_cluster" "prod" {
   provider = azurerm.prod
 
   name                = "sog-prod-aks"
-  location            = azurerm_resource_group.prod_platform.location
+  location            = data.terraform_remote_state.network.outputs.prod_spoke_location
   resource_group_name = azurerm_resource_group.prod_platform.name
   dns_prefix          = "sog-prod-aks"
 
@@ -88,7 +88,7 @@ resource "azurerm_kubernetes_cluster" "nonprod" {
   provider = azurerm.nonprod
 
   name                = "sog-nonprod-aks"
-  location            = azurerm_resource_group.nonprod_platform.location
+  location            = data.terraform_remote_state.network.outputs.nonprod_spoke_location
   resource_group_name = azurerm_resource_group.nonprod_platform.name
   dns_prefix          = "sog-nonprod-aks"
 
