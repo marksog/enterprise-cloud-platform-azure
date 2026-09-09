@@ -32,7 +32,7 @@ jobs:
       ARM_USE_AZUREAD: true
       ARM_CLIENT_ID: ${{ vars.AZURE_IDENTITY_DEPLOY_CLIENT_ID }}
       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_NETWORKING_SUBSCRIPTION_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       TF_VAR_prod_subscription_id: ${{ vars.AZURE_PROD_SUBSCRIPTION_ID }}
       TF_VAR_nonprod_subscription_id: ${{ vars.AZURE_NONPROD_SUBSCRIPTION_ID }}
@@ -49,7 +49,7 @@ jobs:
         with:
           client-id: ${{ vars.AZURE_IDENTITY_DEPLOY_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_NETWORKING_SUBSCRIPTION_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Terraform Init
         run: terraform init -input=false
@@ -85,7 +85,7 @@ jobs:
       ARM_USE_AZUREAD: true
       ARM_CLIENT_ID: ${{ vars.AZURE_IDENTITY_DEPLOY_CLIENT_ID }}
       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_NETWORKING_SUBSCRIPTION_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       TF_VAR_prod_subscription_id: ${{ vars.AZURE_PROD_SUBSCRIPTION_ID }}
       TF_VAR_nonprod_subscription_id: ${{ vars.AZURE_NONPROD_SUBSCRIPTION_ID }}
@@ -102,7 +102,7 @@ jobs:
         with:
           client-id: ${{ vars.AZURE_IDENTITY_DEPLOY_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_NETWORKING_SUBSCRIPTION_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Terraform Init
         run: terraform init -input=false
