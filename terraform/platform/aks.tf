@@ -57,6 +57,12 @@ resource "azurerm_kubernetes_cluster" "prod" {
     vnet_subnet_id = data.terraform_remote_state.network.outputs.prod_aks_subnet_id
 
     type = "VirtualMachineScaleSets"
+
+    tags = {
+      Environment = "production"
+      Owner       = "platform-team"
+      CostCenter  = "production"
+    }
   }
 
   identity {
@@ -108,6 +114,12 @@ resource "azurerm_kubernetes_cluster" "nonprod" {
     vnet_subnet_id = data.terraform_remote_state.network.outputs.nonprod_aks_subnet_id
 
     type = "VirtualMachineScaleSets"
+
+    tags = {
+      Environment = "nonproduction"
+      Owner       = "platform-team"
+      CostCenter  = "nonproduction"
+    }
   }
 
   identity {
