@@ -1,0 +1,119 @@
+# .github/workflows/connectivity-apply.yml
+
+name: Connectivity - Apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/connectivity/**"
+      - ".github/workflows/connectivity-apply.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: connectivity-terraform-state
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Deployment Plan
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform/connectivity
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_USE_AZUREAD: true
+      ARM_CLIENT_ID: ${{ vars.AZURE_CONNECTIVITY_DEPLOY_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_CONNECTIVITY_SUBSCRIPTION_ID }}
+      TF_VAR_nva_admin_ssh_public_key: ${{ vars.NVA_ADMIN_SSH_PUBLIC_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.5
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CONNECTIVITY_DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_CONNECTIVITY_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=connectivity.tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: connectivity-tfplan
+          path: terraform/connectivity/connectivity.tfplan
+          if-no-files-found: error
+          retention-days: 1
+
+  apply:
+    name: Terraform Apply
+    needs: plan
+    runs-on: ubuntu-latest
+
+    environment:
+      name: tenant-governance
+
+    defaults:
+      run:
+        working-directory: terraform/connectivity
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_USE_AZUREAD: true
+      ARM_CLIENT_ID: ${{ vars.AZURE_CONNECTIVITY_DEPLOY_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_CONNECTIVITY_SUBSCRIPTION_ID }}
+      TF_VAR_nva_admin_ssh_public_key: ${{ vars.NVA_ADMIN_SSH_PUBLIC_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.5
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CONNECTIVITY_DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_CONNECTIVITY_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: connectivity-tfplan
+          path: terraform/connectivity
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve connectivity.tfplan
