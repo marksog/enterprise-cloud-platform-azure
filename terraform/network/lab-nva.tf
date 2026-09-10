@@ -52,7 +52,7 @@ resource "azurerm_linux_virtual_machine" "lab_nva" {
   resource_group_name = azurerm_resource_group.hub.name
   location            = azurerm_virtual_network.hub.location
 
-  size = "Standard_D2s_v4"
+  size = "Standard_D2s_v3"
 
   admin_username                  = "azureadmin"
   disable_password_authentication = true
