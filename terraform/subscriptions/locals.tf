@@ -19,6 +19,12 @@ locals {
       subscription_id     = "/subscriptions/68766b2c-cc06-449f-8ab7-f0c688aec64c"
       management_group_id = data.terraform_remote_state.management_groups.outputs.platform_management_group_id
     }
+
+    platform_connectivity_paid = {
+      subscription_id     = "/subscriptions/2dcbd775-c87b-4099-bb4b-2740850fda0b"
+      management_group_id = data.terraform_remote_state.management_groups.outputs.platform_management_group_id
+
+    }
   }
 }
 
