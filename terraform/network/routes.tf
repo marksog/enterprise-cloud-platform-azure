@@ -16,7 +16,7 @@ resource "azurerm_route_table" "prod" {
     name                   = "default-via-hub-nva"
     address_prefix         = "0.0.0.0/0"
     next_hop_type          = "VirtualAppliance"
-    next_hop_in_ip_address = "10.0.0.196"
+    next_hop_in_ip_address = "10.30.0.196"
   }
 
   tags = {
@@ -66,7 +66,7 @@ resource "azurerm_route_table" "nonprod" {
     name                   = "default-via-hub-nva"
     address_prefix         = "0.0.0.0/0"
     next_hop_type          = "VirtualAppliance"
-    next_hop_in_ip_address = "10.0.0.196"
+    next_hop_in_ip_address = "10.30.0.196"
   }
 
   tags = {
