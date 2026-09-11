@@ -35,7 +35,7 @@ resource "azurerm_network_interface" "lab_nva" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.hub_nva.id
     private_ip_address_allocation = "Static"
-    private_ip_address            = "10.30.0.196"
+    private_ip_address            = "10.0.0.196"
     public_ip_address_id          = azurerm_public_ip.lab_nva.id
   }
 
