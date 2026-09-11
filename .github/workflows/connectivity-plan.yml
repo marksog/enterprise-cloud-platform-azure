@@ -26,6 +26,7 @@ jobs:
       ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_CONNECTIVITY_SUBSCRIPTION_ID }}
       TF_VAR_nva_admin_ssh_public_key: ${{ vars.NVA_ADMIN_SSH_PUBLIC_KEY }}
+      TF_VAR_nva_admin_source_cidr: ${{ vars.NVA_ADMIN_SOURCE_CIDR }}
 
     steps:
       - name: Checkout repository

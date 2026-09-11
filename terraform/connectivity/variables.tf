@@ -3,3 +3,8 @@ variable "nva_admin_ssh_public_key" {
   type        = string
   sensitive   = true
 }
+
+variable "nva_admin_source_cidr" {
+  description = "Public CIDR permitted to SSH to the lab NVA."
+  type        = string
+}
