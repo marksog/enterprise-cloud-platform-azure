@@ -55,7 +55,7 @@ resource "azurerm_private_endpoint" "prod_key_vault" {
     name = "keyvault-dns-zone-group"
 
     private_dns_zone_ids = [
-      azurerm_private_dns_zone.key_vault.id
+      data.terraform_remote_state.connectivity.outputs.key_vault_private_dns_zone_id
     ]
   }
 
@@ -122,7 +122,7 @@ resource "azurerm_private_endpoint" "nonprod_key_vault" {
     name = "keyvault-dns-zone-group"
 
     private_dns_zone_ids = [
-      azurerm_private_dns_zone.key_vault.id
+      data.terraform_remote_state.connectivity.outputs.key_vault_private_dns_zone_id
     ]
   }
 

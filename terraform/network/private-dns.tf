@@ -1,10 +1,9 @@
 # ============================================================
-# CENTRALIZED PRIVATE DNS
+# LEGACY PRIVATE DNS ZONE
 #
-# Shared DNS capability hosted in the Hub / connectivity layer.
-# Prod and NonProd keep their own private endpoints and resources,
-# but both VNets can resolve Azure Private Link names through
-# this central Private DNS zone.
+# Temporarily retained during migration so the old DNS records
+# are not deleted until Prod/NonProd have successfully moved
+# to the new Connectivity-owned DNS zone.
 # ============================================================
 
 resource "azurerm_private_dns_zone" "key_vault" {
@@ -18,36 +17,17 @@ resource "azurerm_private_dns_zone" "key_vault" {
   }
 }
 
-
-# ============================================================
-# HUB VNET LINK
-# Allows the Hub VNet to resolve records in the Private DNS zone.
-# ============================================================
-
-resource "azurerm_private_dns_zone_virtual_network_link" "key_vault_hub" {
-  name                = "keyvault-dns-to-hub"
-  private_dns_zone_id = azurerm_private_dns_zone.key_vault.id
-  virtual_network_id  = azurerm_virtual_network.hub.id
-
-  registration_enabled = false
-
-  tags = {
-    Environment = "platform"
-    Owner       = "networking-team"
-    CostCenter  = "platform"
-  }
-}
-
-
 # ============================================================
 # PRODUCTION VNET LINK
-# Allows Prod workloads to resolve Key Vault private endpoints.
+# New centralized DNS zone in paid Connectivity subscription.
 # ============================================================
 
 resource "azurerm_private_dns_zone_virtual_network_link" "key_vault_prod" {
+  provider = azurerm.prod
+
   name = "keyvault-dns-to-prod"
 
-  private_dns_zone_id = azurerm_private_dns_zone.key_vault.id
+  private_dns_zone_id = data.terraform_remote_state.connectivity.outputs.key_vault_private_dns_zone_id
   virtual_network_id  = azurerm_virtual_network.prod.id
 
   registration_enabled = false
@@ -59,16 +39,17 @@ resource "azurerm_private_dns_zone_virtual_network_link" "key_vault_prod" {
   }
 }
 
-
 # ============================================================
 # NON-PRODUCTION VNET LINK
-# Allows NonProd workloads to resolve Key Vault private endpoints.
+# New centralized DNS zone in paid Connectivity subscription.
 # ============================================================
 
 resource "azurerm_private_dns_zone_virtual_network_link" "key_vault_nonprod" {
+  provider = azurerm.nonprod
+
   name = "keyvault-dns-to-nonprod"
 
-  private_dns_zone_id = azurerm_private_dns_zone.key_vault.id
+  private_dns_zone_id = data.terraform_remote_state.connectivity.outputs.key_vault_private_dns_zone_id
   virtual_network_id  = azurerm_virtual_network.nonprod.id
 
   registration_enabled = false
