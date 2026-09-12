@@ -27,16 +27,7 @@ data "terraform_remote_state" "connectivity" {
 # TEMPORARILY RETAINED DURING DNS MIGRATION
 # ============================================================
 
-resource "azurerm_resource_group" "hub" {
-  name     = "sog-platform-connectivity-rg"
-  location = "eastus"
 
-  tags = {
-    Environment = "platform"
-    Owner       = "networking-team"
-    CostCenter  = "platform"
-  }
-}
 
 
 
