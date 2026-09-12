@@ -29,3 +29,23 @@ resource "azurerm_subnet_network_security_group_association" "nva" {
   subnet_id                 = azurerm_subnet.hub_nva.id
   network_security_group_id = azurerm_network_security_group.nva.id
 }
+
+resource "azurerm_network_security_rule" "nva_spoke_transit" {
+  name                   = "Allow-Spoke-Transit"
+  priority               = 110
+  direction              = "Inbound"
+  access                 = "Allow"
+  protocol               = "*"
+  source_port_range      = "*"
+  destination_port_range = "*"
+
+  source_address_prefixes = [
+    "10.10.0.0/20",
+    "10.20.0.0/20"
+  ]
+
+  destination_address_prefix = "*"
+
+  resource_group_name         = azurerm_resource_group.hub.name
+  network_security_group_name = azurerm_network_security_group.nva.name
+}
