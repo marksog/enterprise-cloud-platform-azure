@@ -5,47 +5,9 @@
 # NOT equivalent to Azure Firewall in production.
 # ============================================================
 
-resource "azurerm_public_ip" "lab_nva" {
-  name                = "sog-lab-nva-pip"
-  location            = azurerm_virtual_network.hub.location
-  resource_group_name = azurerm_resource_group.hub.name
 
-  allocation_method = "Static"
-  sku               = "Standard"
 
-  tags = {
-    Environment = "platform"
-    Owner       = "networking-team"
-    CostCenter  = "platform"
-    Purpose     = "lab-nva"
 
-  }
-}
-
-resource "azurerm_network_interface" "lab_nva" {
-  name                = "sog-lab-nva-nic"
-  location            = azurerm_virtual_network.hub.location
-  resource_group_name = azurerm_resource_group.hub.name
-  # Critical for an NVA:
-  # Azure must permit the NIC to forward packets
-  # that are not addressed to the VM itself.
-  ip_forwarding_enabled = true
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.hub_nva.id
-    private_ip_address_allocation = "Static"
-    private_ip_address            = "10.0.0.196"
-    public_ip_address_id          = azurerm_public_ip.lab_nva.id
-  }
-
-  tags = {
-    Environment = "platform"
-    Owner       = "networking-team"
-    CostCenter  = "platform"
-    Purpose     = "lab-nva"
-  }
-}
 
 # resource "azurerm_linux_virtual_machine" "lab_nva" {
 #   name                = "sog-lab-nva"
