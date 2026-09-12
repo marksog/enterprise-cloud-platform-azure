@@ -10,11 +10,21 @@ data "terraform_remote_state" "subscriptions" {
   }
 }
 
+data "terraform_remote_state" "connectivity" {
+  backend = "azurerm"
+
+  config = {
+    resource_group_name  = "sog-platform-bootstrap-rg"
+    storage_account_name = "sogtfstate001"
+    container_name       = "tfstate"
+    key                  = "connectivity.tfstate"
+    use_azuread_auth     = true
+  }
+}
 
 # ============================================================
-# HUB NETWORK
-# Subscription: platform-connectivity
-# Address space: 10.0.0.0/20
+# LEGACY HUB NETWORK
+# TEMPORARILY RETAINED DURING DNS MIGRATION
 # ============================================================
 
 resource "azurerm_resource_group" "hub" {
@@ -41,11 +51,8 @@ resource "azurerm_virtual_network" "hub" {
   }
 }
 
-
 # ============================================================
 # PRODUCTION SPOKE
-# Subscription: Production
-# Address space: 10.10.0.0/20
 # ============================================================
 
 resource "azurerm_virtual_network" "prod" {
@@ -63,11 +70,8 @@ resource "azurerm_virtual_network" "prod" {
   }
 }
 
-
 # ============================================================
 # NON-PRODUCTION SPOKE
-# Subscription: Non-Production
-# Address space: 10.20.0.0/20
 # ============================================================
 
 resource "azurerm_virtual_network" "nonprod" {
@@ -84,5 +88,3 @@ resource "azurerm_virtual_network" "nonprod" {
     CostCenter  = "nonproduction"
   }
 }
-
-
