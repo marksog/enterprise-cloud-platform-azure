@@ -6,17 +6,6 @@
 # to the new Connectivity-owned DNS zone.
 # ============================================================
 
-resource "azurerm_private_dns_zone" "key_vault" {
-  name                = "privatelink.vaultcore.azure.net"
-  resource_group_name = azurerm_resource_group.hub.name
-
-  tags = {
-    Environment = "platform"
-    Owner       = "networking-team"
-    CostCenter  = "platform"
-  }
-}
-
 # ============================================================
 # PRODUCTION VNET LINK
 # New centralized DNS zone in paid Connectivity subscription.
