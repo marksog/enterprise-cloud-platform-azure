@@ -1,8 +1,15 @@
 # ============================================================
-# IDENTITY RESOURCE GROUPS
+# IDENTITY FOUNDATION
 #
-# Workload identities are separated from networking resources
-# and remain inside their respective environment subscriptions.
+# Human identity
+#   -> Microsoft Entra groups / Azure RBAC
+#
+# Platform identity
+#   -> GitHub Actions OIDC plan/deploy identities
+#
+# Workload identity
+#   -> one user-assigned managed identity per application
+#      and environment
 # ============================================================
 
 resource "azurerm_resource_group" "prod_identity" {
@@ -15,6 +22,7 @@ resource "azurerm_resource_group" "prod_identity" {
     Environment = "production"
     Owner       = "platform-team"
     CostCenter  = "production"
+    ManagedBy   = "terraform"
   }
 }
 
@@ -28,71 +36,54 @@ resource "azurerm_resource_group" "nonprod_identity" {
     Environment = "nonproduction"
     Owner       = "platform-team"
     CostCenter  = "nonproduction"
+    ManagedBy   = "terraform"
   }
 }
 
+locals {
+  prod_workload_identities = {
+    for name, config in var.workload_identities : name => config
+    if config.environment == "production"
+  }
 
-# ============================================================
-# PRODUCTION WORKLOAD MANAGED IDENTITY
-#
-# Later federated to a Kubernetes ServiceAccount through
-# AKS Workload Identity.
-# ============================================================
+  nonprod_workload_identities = {
+    for name, config in var.workload_identities : name => config
+    if config.environment == "nonproduction"
+  }
+}
 
 resource "azurerm_user_assigned_identity" "prod_workload" {
   provider = azurerm.prod
+  for_each = local.prod_workload_identities
 
-  name                = "sog-prod-workload-identity"
+  name                = "sog-${each.key}-prod-id"
   location            = azurerm_resource_group.prod_identity.location
   resource_group_name = azurerm_resource_group.prod_identity.name
 
   tags = {
     Environment = "production"
-    Owner       = "platform-team"
-    CostCenter  = "production"
+    Application = each.key
+    Owner       = each.value.owner
+    CostCenter  = each.value.cost_center
+    ManagedBy   = "terraform"
+    Purpose     = "workload-runtime"
   }
 }
 
-
-# ============================================================
-# NON-PRODUCTION WORKLOAD MANAGED IDENTITY
-# ============================================================
-
 resource "azurerm_user_assigned_identity" "nonprod_workload" {
   provider = azurerm.nonprod
+  for_each = local.nonprod_workload_identities
 
-  name                = "sog-nonprod-workload-identity"
+  name                = "sog-${each.key}-nonprod-id"
   location            = azurerm_resource_group.nonprod_identity.location
   resource_group_name = azurerm_resource_group.nonprod_identity.name
 
   tags = {
     Environment = "nonproduction"
-    Owner       = "platform-team"
-    CostCenter  = "nonproduction"
+    Application = each.key
+    Owner       = each.value.owner
+    CostCenter  = each.value.cost_center
+    ManagedBy   = "terraform"
+    Purpose     = "workload-runtime"
   }
-}
-
-
-# ============================================================
-# KEY VAULT RBAC
-#
-# Runtime identities receive read access to secrets only.
-# They do not receive permission to create/delete secrets or
-# administer the Key Vault.
-# ============================================================
-
-resource "azurerm_role_assignment" "prod_workload_key_vault_secrets" {
-  provider = azurerm.prod
-
-  scope                = data.terraform_remote_state.network.outputs.prod_key_vault_id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.prod_workload.principal_id
-}
-
-resource "azurerm_role_assignment" "nonprod_workload_key_vault_secrets" {
-  provider = azurerm.nonprod
-
-  scope                = data.terraform_remote_state.network.outputs.nonprod_key_vault_id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.nonprod_workload.principal_id
 }

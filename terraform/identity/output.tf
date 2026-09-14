@@ -1,35 +1,37 @@
 # ============================================================
-# WORKLOAD IDENTITY OUTPUTS
-# Consumed by the platform layer and later by workload
-# federation configuration.
+# IDENTITY FOUNDATION OUTPUTS
 # ============================================================
 
-output "prod_workload_identity_id" {
-  description = "Resource ID of the Production workload managed identity."
-  value       = azurerm_user_assigned_identity.prod_workload.id
+output "prod_identity_resource_group_id" {
+  description = "Resource ID of the Production identity resource group."
+  value       = azurerm_resource_group.prod_identity.id
 }
 
-output "prod_workload_identity_client_id" {
-  description = "Client ID of the Production workload managed identity."
-  value       = azurerm_user_assigned_identity.prod_workload.client_id
+output "nonprod_identity_resource_group_id" {
+  description = "Resource ID of the Non-Production identity resource group."
+  value       = azurerm_resource_group.nonprod_identity.id
 }
 
-output "prod_workload_identity_principal_id" {
-  description = "Principal ID of the Production workload managed identity."
-  value       = azurerm_user_assigned_identity.prod_workload.principal_id
+output "prod_workload_identities" {
+  description = "Production workload identities keyed by application name."
+
+  value = {
+    for name, identity in azurerm_user_assigned_identity.prod_workload : name => {
+      id           = identity.id
+      client_id    = identity.client_id
+      principal_id = identity.principal_id
+    }
+  }
 }
 
-output "nonprod_workload_identity_id" {
-  description = "Resource ID of the Non-Production workload managed identity."
-  value       = azurerm_user_assigned_identity.nonprod_workload.id
-}
+output "nonprod_workload_identities" {
+  description = "Non-Production workload identities keyed by application name."
 
-output "nonprod_workload_identity_client_id" {
-  description = "Client ID of the Non-Production workload managed identity."
-  value       = azurerm_user_assigned_identity.nonprod_workload.client_id
-}
-
-output "nonprod_workload_identity_principal_id" {
-  description = "Principal ID of the Non-Production workload managed identity."
-  value       = azurerm_user_assigned_identity.nonprod_workload.principal_id
+  value = {
+    for name, identity in azurerm_user_assigned_identity.nonprod_workload : name => {
+      id           = identity.id
+      client_id    = identity.client_id
+      principal_id = identity.principal_id
+    }
+  }
 }
