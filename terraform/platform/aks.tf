@@ -80,7 +80,7 @@ resource "azurerm_kubernetes_cluster" "prod" {
   default_node_pool {
     name = "system"
 
-    vm_size = "Standard_D2s_v5"
+    vm_size = "Standard_D2s_v3"
 
     auto_scaling_enabled = true
     min_count            = 2
@@ -144,7 +144,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "prod_user" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.prod.id
 
   mode    = "User"
-  vm_size = "Standard_D2s_v5"
+  vm_size = "Standard_D2s_v3"
 
   auto_scaling_enabled = true
   min_count            = 1
@@ -204,7 +204,7 @@ resource "azurerm_kubernetes_cluster" "nonprod" {
   default_node_pool {
     name = "system"
 
-    vm_size = "Standard_D2s_v5"
+    vm_size = "Standard_D2s_v3"
 
     auto_scaling_enabled = true
     min_count            = 1
@@ -262,7 +262,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "nonprod_user" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.nonprod.id
 
   mode    = "User"
-  vm_size = "Standard_D2s_v5"
+  vm_size = "Standard_D2s_v3"
 
   auto_scaling_enabled = true
   min_count            = 0
