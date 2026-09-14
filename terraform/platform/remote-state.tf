@@ -40,3 +40,24 @@ data "terraform_remote_state" "identity" {
     use_oidc         = true
   }
 }
+
+# ============================================================
+# SUBSCRIPTIONS REMOTE STATE
+#
+# Platform consumes subscription ownership boundaries rather
+# than hardcoding subscription IDs.
+# ============================================================
+
+data "terraform_remote_state" "subscriptions" {
+  backend = "azurerm"
+
+  config = {
+    resource_group_name  = "sog-platform-bootstrap-rg"
+    storage_account_name = "sogtfstate001"
+    container_name       = "tfstate"
+    key                  = "subscriptions.tfstate"
+
+    use_azuread_auth = true
+    use_oidc         = true
+  }
+}
