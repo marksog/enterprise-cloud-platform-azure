@@ -12,6 +12,7 @@ resource "azurerm_resource_group" "prod_platform" {
     Environment = "production"
     Owner       = "platform-team"
     CostCenter  = "production"
+    ManagedBy   = "terraform"
   }
 }
 
@@ -25,12 +26,25 @@ resource "azurerm_resource_group" "nonprod_platform" {
     Environment = "nonproduction"
     Owner       = "platform-team"
     CostCenter  = "nonproduction"
+    ManagedBy   = "terraform"
   }
 }
 
 
 # ============================================================
-# PRODUCTION AKS
+# PRODUCTION AKS CLUSTER
+#
+# Production runtime design:
+#
+# - Private Kubernetes API
+# - Azure CNI
+# - Azure Network Policy
+# - Centralized egress through UDR/NVA
+# - OIDC issuer
+# - AKS Workload Identity
+# - Microsoft Entra / Azure RBAC
+# - Dedicated autoscaled system node pool
+# - Separate autoscaled application node pool
 # ============================================================
 
 resource "azurerm_kubernetes_cluster" "prod" {
@@ -48,11 +62,31 @@ resource "azurerm_kubernetes_cluster" "prod" {
 
   role_based_access_control_enabled = true
 
+  azure_active_directory_role_based_access_control {
+    azure_rbac_enabled = true
+    tenant_id          = data.azurerm_client_config.current.tenant_id
+  }
+
+  # ----------------------------------------------------------
+  # SYSTEM NODE POOL
+  #
+  # Reserved for critical Kubernetes/platform services.
+  # Application workloads should run on separate user pools.
+  #
+  # Production keeps at least two system nodes for greater
+  # resilience during node failure, maintenance, and upgrades.
+  # ----------------------------------------------------------
+
   default_node_pool {
     name = "system"
 
-    vm_size    = "Standard_B2s"
-    node_count = 1
+    vm_size = "Standard_D2s_v5"
+
+    auto_scaling_enabled = true
+    min_count            = 2
+    max_count            = 3
+
+    only_critical_addons_enabled = true
 
     vnet_subnet_id = data.terraform_remote_state.network.outputs.prod_aks_subnet_id
 
@@ -62,6 +96,8 @@ resource "azurerm_kubernetes_cluster" "prod" {
       Environment = "production"
       Owner       = "platform-team"
       CostCenter  = "production"
+      ManagedBy   = "terraform"
+      NodePool    = "system"
     }
   }
 
@@ -72,7 +108,11 @@ resource "azurerm_kubernetes_cluster" "prod" {
   network_profile {
     network_plugin = "azure"
     network_policy = "azure"
-    outbound_type  = "userDefinedRouting"
+
+    # Internet-bound workload traffic follows our centralized
+    # egress architecture instead of using an AKS-managed
+    # outbound path.
+    outbound_type = "userDefinedRouting"
 
     service_cidr   = "10.110.0.0/16"
     dns_service_ip = "10.110.0.10"
@@ -82,12 +122,56 @@ resource "azurerm_kubernetes_cluster" "prod" {
     Environment = "production"
     Owner       = "platform-team"
     CostCenter  = "production"
+    ManagedBy   = "terraform"
   }
 }
 
 
 # ============================================================
-# NON-PRODUCTION AKS
+# PRODUCTION APPLICATION NODE POOL
+#
+# Application workloads are isolated from system-critical
+# Kubernetes services.
+#
+# The pool can scale independently according to application
+# scheduling pressure.
+# ============================================================
+
+resource "azurerm_kubernetes_cluster_node_pool" "prod_user" {
+  provider = azurerm.prod
+
+  name                  = "user"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.prod.id
+
+  mode    = "User"
+  vm_size = "Standard_D2s_v5"
+
+  auto_scaling_enabled = true
+  min_count            = 1
+  max_count            = 5
+
+  vnet_subnet_id = data.terraform_remote_state.network.outputs.prod_aks_subnet_id
+
+  node_labels = {
+    workload = "application"
+  }
+
+  tags = {
+    Environment = "production"
+    Owner       = "platform-team"
+    CostCenter  = "production"
+    ManagedBy   = "terraform"
+    NodePool    = "user"
+  }
+}
+
+
+# ============================================================
+# NON-PRODUCTION AKS CLUSTER
+#
+# NonProduction keeps the same security and architectural
+# boundaries as Production while using a more cost-conscious
+# capacity model.
 # ============================================================
 
 resource "azurerm_kubernetes_cluster" "nonprod" {
@@ -105,11 +189,28 @@ resource "azurerm_kubernetes_cluster" "nonprod" {
 
   role_based_access_control_enabled = true
 
+  azure_active_directory_role_based_access_control {
+    azure_rbac_enabled = true
+    tenant_id          = data.azurerm_client_config.current.tenant_id
+  }
+
+  # ----------------------------------------------------------
+  # SYSTEM NODE POOL
+  #
+  # NonProduction keeps at least one system node but can scale
+  # to two when cluster/platform demand increases.
+  # ----------------------------------------------------------
+
   default_node_pool {
     name = "system"
 
-    vm_size    = "Standard_B2s"
-    node_count = 1
+    vm_size = "Standard_D2s_v5"
+
+    auto_scaling_enabled = true
+    min_count            = 1
+    max_count            = 2
+
+    only_critical_addons_enabled = true
 
     vnet_subnet_id = data.terraform_remote_state.network.outputs.nonprod_aks_subnet_id
 
@@ -119,6 +220,8 @@ resource "azurerm_kubernetes_cluster" "nonprod" {
       Environment = "nonproduction"
       Owner       = "platform-team"
       CostCenter  = "nonproduction"
+      ManagedBy   = "terraform"
+      NodePool    = "system"
     }
   }
 
@@ -129,7 +232,8 @@ resource "azurerm_kubernetes_cluster" "nonprod" {
   network_profile {
     network_plugin = "azure"
     network_policy = "azure"
-    outbound_type  = "userDefinedRouting"
+
+    outbound_type = "userDefinedRouting"
 
     service_cidr   = "10.120.0.0/16"
     dns_service_ip = "10.120.0.10"
@@ -139,5 +243,42 @@ resource "azurerm_kubernetes_cluster" "nonprod" {
     Environment = "nonproduction"
     Owner       = "platform-team"
     CostCenter  = "nonproduction"
+    ManagedBy   = "terraform"
+  }
+}
+
+
+# ============================================================
+# NON-PRODUCTION APPLICATION NODE POOL
+#
+# NonProduction application capacity can scale down to zero
+# when there are no schedulable application workloads.
+# ============================================================
+
+resource "azurerm_kubernetes_cluster_node_pool" "nonprod_user" {
+  provider = azurerm.nonprod
+
+  name                  = "user"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.nonprod.id
+
+  mode    = "User"
+  vm_size = "Standard_D2s_v5"
+
+  auto_scaling_enabled = true
+  min_count            = 0
+  max_count            = 3
+
+  vnet_subnet_id = data.terraform_remote_state.network.outputs.nonprod_aks_subnet_id
+
+  node_labels = {
+    workload = "application"
+  }
+
+  tags = {
+    Environment = "nonproduction"
+    Owner       = "platform-team"
+    CostCenter  = "nonproduction"
+    ManagedBy   = "terraform"
+    NodePool    = "user"
   }
 }
