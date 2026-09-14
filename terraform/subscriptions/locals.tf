@@ -15,20 +15,17 @@ locals {
       management_group_id = data.terraform_remote_state.management_groups.outputs.platform_management_group_id
     }
 
-    platform_connectivity = {
-      subscription_id     = "/subscriptions/68766b2c-cc06-449f-8ab7-f0c688aec64c"
-      management_group_id = data.terraform_remote_state.management_groups.outputs.platform_management_group_id
-    }
-
     platform_connectivity_paid = {
       subscription_id     = "/subscriptions/2dcbd775-c87b-4099-bb4b-2740850fda0b"
       management_group_id = data.terraform_remote_state.management_groups.outputs.platform_management_group_id
+    }
 
+    platform_shared_services = {
+      subscription_id     = "/subscriptions/9ee656be-a9d7-4006-b90f-7549517b1edc"
+      management_group_id = data.terraform_remote_state.management_groups.outputs.platform_management_group_id
     }
   }
 }
-
-
 
 locals {
   rbac_assignments = {
@@ -57,4 +54,3 @@ locals {
     }
   }
 }
-
