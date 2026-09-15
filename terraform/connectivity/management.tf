@@ -177,7 +177,7 @@ resource "azurerm_linux_virtual_machine" "management" {
   resource_group_name = azurerm_resource_group.hub.name
   location            = azurerm_resource_group.hub.location
 
-  size = "Standard_D2s_v3"
+  size = "Standard_D2as_v7"
 
   admin_username                  = "azureadmin"
   disable_password_authentication = true
