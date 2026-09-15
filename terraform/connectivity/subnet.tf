@@ -32,3 +32,18 @@ resource "azurerm_subnet" "hub_nva" {
   virtual_network_name = azurerm_virtual_network.hub.name
   address_prefixes     = ["10.30.0.192/27"]
 }
+
+# ============================================================
+# MANAGEMENT SUBNET
+#
+# Dedicated privileged administration boundary for platform
+# management hosts. Azure Bastion remains in the reserved
+# AzureBastionSubnet and connects privately to hosts here.
+# ============================================================
+
+resource "azurerm_subnet" "hub_management" {
+  name                 = "management-subnet"
+  resource_group_name  = azurerm_resource_group.hub.name
+  virtual_network_name = azurerm_virtual_network.hub.name
+  address_prefixes     = ["10.30.0.224/27"]
+}
