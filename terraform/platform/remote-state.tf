@@ -61,3 +61,24 @@ data "terraform_remote_state" "subscriptions" {
     use_oidc         = true
   }
 }
+
+# ============================================================
+# CONNECTIVITY REMOTE STATE
+#
+# Platform consumes network resources exposed through the
+# Connectivity stack contract rather than hardcoding resource
+# IDs across subscriptions.
+# ============================================================
+
+data "terraform_remote_state" "connectivity" {
+  backend = "azurerm"
+
+  config = {
+    resource_group_name  = "sog-tfstate-rg"
+    storage_account_name = "sogtfstate001"
+    container_name       = "tfstate"
+    key                  = "connectivity.tfstate"
+
+    use_azuread_auth = true
+  }
+}

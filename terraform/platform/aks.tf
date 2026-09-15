@@ -92,6 +92,10 @@ resource "azurerm_kubernetes_cluster" "prod" {
 
     type = "VirtualMachineScaleSets"
 
+    upgrade_settings {
+      max_surge = "10%"
+    }
+
     tags = {
       Environment = "production"
       Owner       = "platform-team"
@@ -152,6 +156,9 @@ resource "azurerm_kubernetes_cluster_node_pool" "prod_user" {
 
   vnet_subnet_id = data.terraform_remote_state.network.outputs.prod_aks_subnet_id
 
+  upgrade_settings {
+    max_surge = "10%"
+  }
   node_labels = {
     workload = "application"
   }
@@ -216,6 +223,10 @@ resource "azurerm_kubernetes_cluster" "nonprod" {
 
     type = "VirtualMachineScaleSets"
 
+    upgrade_settings {
+      max_surge = "10%"
+    }
+
     tags = {
       Environment = "nonproduction"
       Owner       = "platform-team"
@@ -269,6 +280,10 @@ resource "azurerm_kubernetes_cluster_node_pool" "nonprod_user" {
   max_count            = 3
 
   vnet_subnet_id = data.terraform_remote_state.network.outputs.nonprod_aks_subnet_id
+
+  upgrade_settings {
+    max_surge = "10%"
+  }
 
   node_labels = {
     workload = "application"
