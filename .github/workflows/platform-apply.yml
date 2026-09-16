@@ -36,7 +36,9 @@ jobs:
 
       TF_VAR_prod_subscription_id: ${{ vars.AZURE_PROD_SUBSCRIPTION_ID }}
       TF_VAR_nonprod_subscription_id: ${{ vars.AZURE_NONPROD_SUBSCRIPTION_ID }}
-
+      TF_VAR_nonprod_aks_admin_group_object_ids: ${{ vars.NONPROD_AKS_ADMIN_GROUP_OBJECT_IDS }}
+      
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -89,6 +91,7 @@ jobs:
 
       TF_VAR_prod_subscription_id: ${{ vars.AZURE_PROD_SUBSCRIPTION_ID }}
       TF_VAR_nonprod_subscription_id: ${{ vars.AZURE_NONPROD_SUBSCRIPTION_ID }}
+      TF_VAR_nonprod_aks_admin_group_object_ids: ${{ vars.NONPROD_AKS_ADMIN_GROUP_OBJECT_IDS }}
 
     steps:
       - name: Checkout repository
