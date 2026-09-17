@@ -65,3 +65,13 @@ output "nonprod_aks_oidc_issuer_url" {
   description = "OIDC issuer URL used by Non-Production AKS Workload Identity."
   value       = azurerm_kubernetes_cluster.nonprod.oidc_issuer_url
 }
+
+output "nonprod_aks_location" {
+  description = "Azure region of the Non-Production AKS platform."
+  value       = azurerm_kubernetes_cluster.nonprod.location
+}
+
+output "prod_aks_location" {
+  description = "Azure region of the Production AKS platform."
+  value       = azurerm_kubernetes_cluster.prod.location
+}
