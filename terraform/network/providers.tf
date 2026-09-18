@@ -1,10 +1,4 @@
 provider "azurerm" {
-  features {}
-
-  subscription_id = "68766b2c-cc06-449f-8ab7-f0c688aec64c"
-}
-
-provider "azurerm" {
   alias = "prod"
 
   features {}
