@@ -48,3 +48,8 @@ output "nonprod_spoke_location" {
   description = "Azure region of the Non-Production spoke virtual network."
   value       = azurerm_virtual_network.nonprod.location
 }
+
+output "nonprod_private_endpoints_subnet_id" {
+  description = "Resource ID of the Non-Production subnet reserved for Azure Private Endpoints."
+  value       = azurerm_subnet.nonprod_private_endpoints.id
+}
