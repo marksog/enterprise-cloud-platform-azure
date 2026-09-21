@@ -152,3 +152,18 @@ variable "domain_secret_store_enabled" {
   type        = bool
   default     = false
 }
+
+variable "owner" {
+  description = "Organizational owner inherited from the workload's domain."
+  type        = string
+}
+
+variable "cost_center" {
+  description = "Cost allocation identifier inherited from the workload's domain."
+  type        = string
+}
+
+variable "domain_name" {
+  description = "Logical domain to which this workload belongs."
+  type        = string
+}

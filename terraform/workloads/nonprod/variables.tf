@@ -26,6 +26,9 @@ variable "domains" {
   type = map(object({
     description          = optional(string)
     secret_store_enabled = optional(bool, true)
+
+    owner       = string
+    cost_center = string
   }))
 
   default = {}

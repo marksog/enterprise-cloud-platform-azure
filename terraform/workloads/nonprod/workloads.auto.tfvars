@@ -2,6 +2,9 @@ domains = {
   commerce = {
     description          = "Commerce application workloads"
     secret_store_enabled = true
+
+    owner       = "commerce-team"
+    cost_center = "nonproduction"
   }
 }
 

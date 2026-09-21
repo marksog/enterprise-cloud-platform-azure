@@ -25,11 +25,7 @@ resource "azurerm_key_vault" "this" {
   soft_delete_retention_days = 7
   purge_protection_enabled   = false
 
-  tags = {
-    Environment = var.environment
-    Domain      = var.name
-    ManagedBy   = "terraform"
-  }
+  tags = local.common_azure_tags
 }
 
 
@@ -60,9 +56,5 @@ resource "azurerm_private_endpoint" "key_vault" {
     ]
   }
 
-  tags = {
-    Environment = var.environment
-    Domain      = var.name
-    ManagedBy   = "terraform"
-  }
+  tags = local.common_azure_tags
 }

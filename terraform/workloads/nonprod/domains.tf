@@ -13,6 +13,10 @@ module "domain" {
   # Environment context
   environment = "nonprod"
 
+  # Organizational context
+  owner       = each.value.owner
+  cost_center = each.value.cost_center
+
   # Azure context
   azure_location            = data.terraform_remote_state.platform.outputs.nonprod_aks_location
   azure_resource_group_name = data.terraform_remote_state.platform.outputs.nonprod_aks_resource_group_name

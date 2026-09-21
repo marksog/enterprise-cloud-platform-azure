@@ -53,3 +53,13 @@ variable "key_vault_private_dns_zone_id" {
   description = "Private DNS zone resource ID used by Key Vault Private Link."
   type        = string
 }
+
+variable "owner" {
+  description = "Organizational owner of resources belonging to this domain."
+  type        = string
+}
+
+variable "cost_center" {
+  description = "Cost allocation identifier for resources belonging to this domain."
+  type        = string
+}
