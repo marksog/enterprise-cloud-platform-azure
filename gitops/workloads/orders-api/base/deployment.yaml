@@ -26,7 +26,7 @@ spec:
 
       containers:
         - name: orders-api
-          image: sogplatformacr.azurecr.io/orders-api:v1
+          image: sogplatformacr.azurecr.io/orders-api
 
           ports:
             - name: http
