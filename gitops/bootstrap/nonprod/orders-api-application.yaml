@@ -11,7 +11,7 @@ spec:
   source:
     repoURL: https://github.com/marksog/enterprise-cloud-platform-azure.git
     targetRevision: main
-    path: gitops/workloads/orders-api/base
+    path: gitops/workloads/orders-api/overlays/nonprod
 
   destination:
     server: https://kubernetes.default.svc
