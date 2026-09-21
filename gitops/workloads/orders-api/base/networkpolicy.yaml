@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orders-api
+  namespace: sog-nonprod-commerce
+
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: orders-api
+
+  policyTypes:
+    - Ingress
+
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sog-nonprod-commerce
