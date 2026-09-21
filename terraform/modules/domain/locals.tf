@@ -22,4 +22,12 @@ locals {
     "sog.io/environment"           = var.environment
     "app.kubernetes.io/managed-by" = "sog-platform"
   }
+
+  common_azure_tags = {
+    Environment = var.environment
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Domain      = var.name
+    ManagedBy   = "terraform"
+  }
 }

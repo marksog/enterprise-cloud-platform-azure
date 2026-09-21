@@ -21,11 +21,7 @@ resource "azurerm_user_assigned_identity" "this" {
   location            = var.azure_location
   resource_group_name = var.azure_resource_group_name
 
-  tags = {
-    Environment = var.environment
-    Workload    = var.name
-    ManagedBy   = "terraform"
-  }
+  tags = local.common_azure_tags
 }
 
 

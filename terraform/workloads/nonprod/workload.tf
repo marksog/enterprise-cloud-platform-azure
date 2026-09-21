@@ -28,5 +28,10 @@ module "workload" {
   azure_location            = data.terraform_remote_state.platform.outputs.nonprod_aks_location
   aks_oidc_issuer_url       = data.terraform_remote_state.platform.outputs.nonprod_aks_oidc_issuer_url
 
+  # Domain ownership context
+  domain_name = each.value.domain
+  owner       = var.domains[each.value.domain].owner
+  cost_center = var.domains[each.value.domain].cost_center
+
 }
 
