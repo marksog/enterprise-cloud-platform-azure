@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sog-nonprod-commerce
+  labels:
+    sog.io/domain: commerce
+    sog.io/environment: nonprod
+    app.kubernetes.io/managed-by: argocd
