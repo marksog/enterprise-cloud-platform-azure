@@ -23,6 +23,11 @@ terraform.rc
 terraform.tfvars
 !terraform/management-groups/terraform.tfvars
 
+
+# Non-sensitive declarative workload catalogs are version controlled
+
+!terraform/workloads/*/workloads.auto.tfvars
+
 # macOS
 .DS_Store
 
