@@ -10,12 +10,16 @@ RUN pip install \
 
 COPY app ./app
 
-RUN useradd \
-    --create-home \
-    --uid 10001 \
-    appuser
+RUN groupadd \
+      --gid 10001 \
+      appuser \
+    && useradd \
+      --create-home \
+      --uid 10001 \
+      --gid 10001 \
+      appuser
 
-USER appuser
+USER 10001:10001
 
 EXPOSE 8080
 
