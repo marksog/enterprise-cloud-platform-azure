@@ -65,6 +65,11 @@ jobs:
       - name: Test root endpoint
         run: curl --fail http://127.0.0.1:8080/
 
+      - name: Test Prometheus metrics endpoint
+        run: |
+          curl --fail --silent http://127.0.0.1:8080/metrics \
+            | grep "orders_api_http_requests_total"
+
   build-and-push:
     name: Build and Push Image
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
