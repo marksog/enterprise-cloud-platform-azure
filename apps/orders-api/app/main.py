@@ -46,12 +46,12 @@ def identity_test():
 
         return {
             "status": "success",
+            "key_vault_access": bool(secret.value),
             "secret_name": secret.name,
-            "secret_value": secret.value,
         }
 
-    except Exception as exc:
+    except Exception:
         raise HTTPException(
             status_code=500,
-            detail=f"Key Vault access failed: {exc}",
+            detail="Key Vault access failed",
         )
