@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: observability
+  namespace: argocd
+
+spec:
+  project: default
+
+  sources:
+    # ----------------------------------------------------------
+    # SOURCE 1: kube-prometheus-stack Helm chart
+    # ----------------------------------------------------------
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 89.2.0
+
+      helm:
+        releaseName: sog-observability
+
+        valueFiles:
+          - $values/gitops/platform/observability/nonprod/values.yaml
+
+    # ----------------------------------------------------------
+    # SOURCE 2: Our Git repository containing Helm values
+    # ----------------------------------------------------------
+    - repoURL: https://github.com/marksog/enterprise-cloud-platform-azure.git
+      targetRevision: main
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sog-nonprod-observability
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
