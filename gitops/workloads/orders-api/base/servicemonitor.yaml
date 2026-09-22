@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: orders-api
+  namespace: sog-nonprod-commerce
+  labels:
+    app.kubernetes.io/name: orders-api
+    sog.io/domain: commerce
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: orders-api
+
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
