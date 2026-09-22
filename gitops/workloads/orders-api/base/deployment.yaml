@@ -22,6 +22,10 @@ spec:
         azure.workload.identity/use: "true"
 
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
       serviceAccountName: orders-api
 
       containers:
@@ -39,3 +43,28 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
