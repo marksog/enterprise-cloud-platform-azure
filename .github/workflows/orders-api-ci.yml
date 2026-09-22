@@ -73,8 +73,9 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       id-token: write
+      pull-requests: write
 
     env:
       ACR_NAME: sogplatformacr
@@ -117,3 +118,55 @@ jobs:
         run: |
           echo "Published:"
           echo "${{ steps.image.outputs.image }}"
+
+      - name: Install Kustomize
+        env:
+          KUSTOMIZE_VERSION: "5.7.1"
+        run: |
+          curl -fsSLo /tmp/kustomize.tar.gz \
+            "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+
+          tar -xzf /tmp/kustomize.tar.gz -C /tmp
+          sudo install /tmp/kustomize /usr/local/bin/kustomize
+
+          kustomize version
+
+      - name: Update NonProd image tag
+        env:
+          IMAGE_TAG: ${{ steps.image.outputs.short_sha }}
+        run: |
+          cd gitops/workloads/orders-api/overlays/nonprod
+
+          kustomize edit set image \
+            sogplatformacr.azurecr.io/orders-api=sogplatformacr.azurecr.io/orders-api:${IMAGE_TAG}
+
+      - name: Show promotion change
+        run: |
+          git diff -- \
+            gitops/workloads/orders-api/overlays/nonprod/kustomization.yaml
+
+      - name: Create NonProd promotion pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE_TAG: ${{ steps.image.outputs.short_sha }}
+        run: |
+          BRANCH="promote/orders-api-${IMAGE_TAG}-nonprod"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git switch -c "$BRANCH"
+
+          git add \
+            gitops/workloads/orders-api/overlays/nonprod/kustomization.yaml
+
+          git commit \
+            -m "chore(orders-api): promote ${IMAGE_TAG} to nonprod"
+
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(orders-api): promote ${IMAGE_TAG} to nonprod" \
+            --body "Promotes the immutable orders-api image \`${IMAGE_TAG}\` to NonProd."
