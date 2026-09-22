@@ -13,7 +13,20 @@ spec:
     - Ingress
 
   ingress:
+    # Allow application traffic originating inside the Commerce namespace.
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: sog-nonprod-commerce
+
+    # Allow only Prometheus in the observability namespace to scrape metrics.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sog-nonprod-observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 8080
