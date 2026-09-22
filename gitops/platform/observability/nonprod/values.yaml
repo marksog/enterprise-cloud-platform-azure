@@ -1,0 +1,99 @@
+# ============================================================
+# NONPROD OBSERVABILITY
+#
+# kube-prometheus-stack configuration for the SOG NonProd AKS
+# platform.
+#
+# Managed by Argo CD.
+# ============================================================
+
+# ------------------------------------------------------------
+# PROMETHEUS
+# ------------------------------------------------------------
+
+prometheus:
+  prometheusSpec:
+
+    # Discover ServiceMonitor resources outside the Helm release
+    # itself. This allows application teams/platform workloads
+    # to publish their own monitoring contracts.
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+    # Allow discovery across namespaces.
+    serviceMonitorNamespaceSelector: {}
+
+    # NonProd retention.
+    retention: 7d
+
+    # Keep the initial lab footprint controlled.
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+
+
+# ------------------------------------------------------------
+# GRAFANA
+# ------------------------------------------------------------
+
+grafana:
+  enabled: true
+
+  service:
+    type: ClusterIP
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+
+# ------------------------------------------------------------
+# ALERTMANAGER
+# ------------------------------------------------------------
+
+alertmanager:
+  enabled: true
+
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+
+
+# ------------------------------------------------------------
+# KUBE-STATE-METRICS
+# ------------------------------------------------------------
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+
+# ------------------------------------------------------------
+# NODE EXPORTER
+# ------------------------------------------------------------
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
