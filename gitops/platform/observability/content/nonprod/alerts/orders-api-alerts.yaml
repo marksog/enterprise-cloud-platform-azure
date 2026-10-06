@@ -1,0 +1,71 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: orders-api-alerts
+  namespace: sog-nonprod-observability
+  labels:
+    release: sog-observability
+    app.kubernetes.io/name: orders-api
+    sog.io/domain: commerce
+
+spec:
+  groups:
+    - name: orders-api.rules
+      rules:
+        - alert: OrdersAPITargetDown
+          expr: up{job="orders-api"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            service: orders-api
+            domain: commerce
+          annotations:
+            summary: Orders API Prometheus target is down
+            description: Prometheus has been unable to scrape orders-api for more than 2 minutes.
+
+        - alert: OrdersAPIHigh5xxErrorRate
+          expr: |
+            (
+              sum(rate(orders_api_http_requests_total{
+                path!="/health",
+                status_code=~"5.."
+              }[5m]))
+              /
+              clamp_min(
+                sum(rate(orders_api_http_requests_total{
+                  path!="/health"
+                }[5m])),
+                0.000001
+              )
+            ) > 0.05
+            and
+            sum(rate(orders_api_http_requests_total{
+              path!="/health"
+            }[5m])) > 0.1
+          for: 10m
+          labels:
+            severity: high
+            service: orders-api
+            domain: commerce
+          annotations:
+            summary: Orders API has a sustained high 5xx error rate
+            description: More than 5% of application requests are returning 5xx responses for at least 10 minutes while meaningful traffic is present.
+
+        - alert: OrdersAPIHighP95Latency
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (
+                rate(orders_api_http_request_duration_seconds_bucket{
+                  path!="/health"
+                }[5m])
+              )
+            ) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+            service: orders-api
+            domain: commerce
+          annotations:
+            summary: Orders API p95 latency is high
+            description: Orders API p95 latency has exceeded 500 milliseconds for at least 10 minutes.
