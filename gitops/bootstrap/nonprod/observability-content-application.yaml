@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: observability-content
+  namespace: argocd
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/marksog/enterprise-cloud-platform-azure.git
+    targetRevision: main
+    path: gitops/platform/observability/content/nonprod
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sog-nonprod-observability
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
