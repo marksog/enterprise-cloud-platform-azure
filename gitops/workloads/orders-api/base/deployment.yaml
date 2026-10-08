@@ -26,6 +26,14 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: orders-api
+
       serviceAccountName: orders-api
 
       containers:
