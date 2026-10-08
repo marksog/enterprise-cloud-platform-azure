@@ -1,0 +1,39 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+
+metadata:
+  name: platform-alerts
+  namespace: sog-nonprod-observability
+  labels:
+    app.kubernetes.io/name: platform-alerts
+    app.kubernetes.io/part-of: observability
+    sog.io/component: alert-routing
+
+spec:
+  route:
+    receiver: platform-slack
+    groupBy:
+      - alertname
+      - service
+      - severity
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 4h
+
+  receivers:
+    - name: platform-slack
+      slackConfigs:
+        - apiURL:
+            name: alertmanager-slack-webhook
+            key: url
+          channel: "#platform-alerts"
+          sendResolved: true
+          title: >-
+            [{{ .Status | toUpper }}]
+            {{ .CommonLabels.alertname }}
+          text: >-
+            *Severity:* {{ .CommonLabels.severity }}
+            *Service:* {{ .CommonLabels.service }}
+            *Domain:* {{ .CommonLabels.domain }}
+            *Summary:* {{ .CommonAnnotations.summary }}
+            *Description:* {{ .CommonAnnotations.description }}
