@@ -7,3 +7,4 @@ resources:
   - observability-application.yaml
   - observability-content-application.yaml
   - loki-application.yaml
+  - storage-application.yaml
