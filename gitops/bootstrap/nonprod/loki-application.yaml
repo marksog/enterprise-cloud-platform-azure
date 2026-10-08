@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: loki
+  namespace: argocd
+
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://grafana-community.github.io/helm-charts
+      chart: loki
+      targetRevision: 18.15.0
+
+      helm:
+        releaseName: sog-loki
+
+        valueFiles:
+          - $values/gitops/platform/observability/logging/nonprod/loki-values.yaml
+
+    - repoURL: https://github.com/marksog/enterprise-cloud-platform-azure.git
+      targetRevision: main
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sog-nonprod-observability
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
