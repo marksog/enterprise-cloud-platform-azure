@@ -12,6 +12,10 @@ metadata:
 spec:
   route:
     receiver: platform-slack
+    matchers:
+      - name: service
+        matchType: "=~"
+        value: ".+"
     groupBy:
       - alertname
       - service
