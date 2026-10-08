@@ -6,3 +6,4 @@ namespace: sog-nonprod-observability
 resources:
   - dashboards
   - alerts
+  - notifications
