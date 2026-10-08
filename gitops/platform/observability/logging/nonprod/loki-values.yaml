@@ -48,7 +48,7 @@ singleBinary:
 
   persistence:
     enabled: true
-    storageClass: default
+    storageClass: sog-managed-disk
     accessModes:
       - ReadWriteOnce
     size: 10Gi
