@@ -43,6 +43,10 @@ spec:
             - name: http
               containerPort: 8080
 
+          env:
+            - name: CHAOS_LATENCY_MS
+              value: "0"
+
           resources:
             requests:
               cpu: 100m

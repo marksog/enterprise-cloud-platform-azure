@@ -4,6 +4,8 @@ from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from fastapi import FastAPI, HTTPException
 import time
+import asyncio
+import os
 
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
@@ -12,6 +14,8 @@ app = FastAPI(
     title="Orders API",
     version="1.0.0",
 )
+
+CHAOS_LATENCY_MS = max(0, int(os.getenv("CHAOS_LATENCY_MS", "0")))
 
 REQUEST_COUNT = Counter(
     "orders_api_http_requests_total",
@@ -55,7 +59,10 @@ async def observe_requests(request, call_next):
 
 
 @app.get("/")
-def root():
+async def root():
+    if CHAOS_LATENCY_MS > 0:
+        await asyncio.sleep(CHAOS_LATENCY_MS / 1000)
+
     return {
         "service": "orders-api",
         "status": "running",
