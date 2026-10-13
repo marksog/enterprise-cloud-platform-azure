@@ -46,6 +46,17 @@ grafana:
     plugins:
       preinstall_auto_update: false
 
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: sog-managed-disk
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+
+  deploymentStrategy:
+    type: Recreate
+
   service:
     type: ClusterIP
 
