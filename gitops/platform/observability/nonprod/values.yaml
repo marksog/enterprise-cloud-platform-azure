@@ -42,6 +42,10 @@ prometheus:
 grafana:
   enabled: true
 
+  grafana.ini:
+    plugins:
+      preinstall_auto_update: false
+
   service:
     type: ClusterIP
 
