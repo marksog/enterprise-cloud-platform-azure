@@ -8,3 +8,12 @@ images:
 - name: sogplatformacr.azurecr.io/orders-api
   newName: sogplatformacr.azurecr.io/orders-api
   newTag: 02716bb
+
+patches:
+  - target:
+      kind: Deployment
+      name: orders-api
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: "750"
