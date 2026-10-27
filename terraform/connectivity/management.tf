@@ -42,29 +42,6 @@ resource "azurerm_network_security_group" "management" {
 
 
 # ============================================================
-# ALLOW SSH FROM AZURE BASTION
-#
-# Only resources originating from AzureBastionSubnet may SSH
-# to the management VM.
-# ============================================================
-
-resource "azurerm_network_security_rule" "management_ssh_from_bastion" {
-  name                       = "Allow-SSH-From-Bastion"
-  priority                   = 100
-  direction                  = "Inbound"
-  access                     = "Allow"
-  protocol                   = "Tcp"
-  source_port_range          = "*"
-  destination_port_range     = "22"
-  source_address_prefix      = "10.30.0.64/26"
-  destination_address_prefix = "10.30.0.224/27"
-
-  resource_group_name         = azurerm_resource_group.hub.name
-  network_security_group_name = azurerm_network_security_group.management.name
-}
-
-
-# ============================================================
 # MANAGEMENT SUBNET NSG ASSOCIATION
 # ============================================================
 
