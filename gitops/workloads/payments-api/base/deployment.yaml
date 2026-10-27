@@ -27,7 +27,7 @@ spec:
 
       containers:
         - name: payments-api
-          image: sogplatformacr.azurecr.io/payments-api:bootstrap
+          image: sogplatformacr.azurecr.io/payments-api:01db9bf
           imagePullPolicy: IfNotPresent
 
           ports:
