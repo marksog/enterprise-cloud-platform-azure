@@ -74,61 +74,6 @@ resource "azurerm_subnet_network_security_group_association" "management" {
 }
 
 
-# ============================================================
-# AZURE BASTION PUBLIC IP
-#
-# The Bastion service requires its own Standard static
-# public IP. The management VM itself remains private.
-# ============================================================
-
-resource "azurerm_public_ip" "bastion" {
-  name                = "sog-bastion-pip"
-  location            = azurerm_resource_group.hub.location
-  resource_group_name = azurerm_resource_group.hub.name
-
-  allocation_method = "Static"
-  sku               = "Standard"
-
-  tags = {
-    Environment = "platform"
-    Owner       = "platform-team"
-    CostCenter  = "platform"
-    Purpose     = "secure-administration"
-    ManagedBy   = "terraform"
-  }
-}
-
-
-# ============================================================
-# AZURE BASTION
-#
-# Bastion resides in the reserved AzureBastionSubnet.
-#
-# Administrators connect to private management hosts through
-# Bastion without assigning public IPs to those hosts.
-# ============================================================
-
-resource "azurerm_bastion_host" "platform" {
-  name                = "sog-platform-bastion"
-  location            = azurerm_resource_group.hub.location
-  resource_group_name = azurerm_resource_group.hub.name
-
-  sku = "Basic"
-
-  ip_configuration {
-    name                 = "bastion-ip-config"
-    subnet_id            = azurerm_subnet.hub_bastion.id
-    public_ip_address_id = azurerm_public_ip.bastion.id
-  }
-
-  tags = {
-    Environment = "platform"
-    Owner       = "platform-team"
-    CostCenter  = "platform"
-    Purpose     = "secure-administration"
-    ManagedBy   = "terraform"
-  }
-}
 
 
 # ============================================================
