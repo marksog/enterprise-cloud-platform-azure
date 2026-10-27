@@ -40,6 +40,10 @@ prometheus:
 # ------------------------------------------------------------
 
 grafana:
+  admin:
+    existingSecret: sog-grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
   enabled: true
 
   grafana.ini:
