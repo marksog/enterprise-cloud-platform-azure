@@ -88,8 +88,9 @@ jobs:
 
       - name: Test metrics endpoint
         run: |
-          curl --fail --silent http://127.0.0.1:8080/metrics \
-            | grep "payments_created_total"
+          curl --fail --silent --show-error --location \
+            http://127.0.0.1:8080/metrics/ \
+            | grep '^payments_created_total'
 
   build-and-push:
     name: Build and Push Image
