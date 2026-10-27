@@ -10,14 +10,24 @@ variable "workloads" {
   description = "Application workloads deployed to the Non-Production platform."
 
   type = map(object({
-    domain   = string
-    image    = string
-    port     = number
-    size     = optional(string, "small")
-    exposure = optional(string, "internal")
+    domain         = string
+    image          = string
+    port           = number
+    size           = optional(string, "small")
+    exposure       = optional(string, "internal")
+    namespace_mode = optional(string, "domain")
   }))
 
   default = {}
+
+  validation {
+    condition = alltrue([
+      for workload in values(var.workloads) :
+      contains(["domain", "dedicated"], workload.namespace_mode)
+    ])
+
+    error_message = "namespace_mode must be either 'domain' or 'dedicated'."
+  }
 }
 
 variable "domains" {
@@ -47,6 +57,3 @@ variable "nonprod_subscription_id" {
   description = "Azure subscription ID for the Non-Production workload environment."
   type        = string
 }
-
-
-
