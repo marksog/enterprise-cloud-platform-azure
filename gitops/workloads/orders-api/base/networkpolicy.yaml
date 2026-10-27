@@ -30,3 +30,16 @@ spec:
       ports:
         - protocol: TCP
           port: 8080
+
+    # Allow Payments API to verify orders.
+    # Restrict access to Payments Pods in their dedicated namespace.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sog-nonprod-commerce-payments-api
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: payments-api
+      ports:
+        - protocol: TCP
+          port: 8080

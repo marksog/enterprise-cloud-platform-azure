@@ -12,10 +12,17 @@ workloads = {
   "orders-api" = {
     domain = "commerce"
 
-    image = "sogplatformacr.azurecr.io/orders-api:v1"
-    port  = 8080
-
+    image    = "sogplatformacr.azurecr.io/orders-api:v1"
+    port     = 8080
     size     = "small"
     exposure = "internal"
+  },
+  "payments-api" = {
+    domain         = "commerce"
+    image          = "sogplatformacr.azurecr.io/payments-api:bootstrap"
+    port           = 8080
+    size           = "small"
+    exposure       = "internal"
+    namespace_mode = "dedicated"
   }
 }

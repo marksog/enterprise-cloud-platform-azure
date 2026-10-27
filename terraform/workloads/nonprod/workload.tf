@@ -20,8 +20,12 @@ module "workload" {
   domain_secret_store_enabled = var.domains[each.value.domain].secret_store_enabled
 
   # Environment/domain context
-  environment    = "nonprod"
-  namespace_name = module.domain[each.value.domain].namespace_name
+  environment = "nonprod"
+  namespace_name = (
+    each.value.namespace_mode == "dedicated"
+    ? "${module.domain[each.value.domain].namespace_name}-${each.key}"
+    : module.domain[each.value.domain].namespace_name
+  )
 
   # Platform-provided Azure context
   azure_resource_group_name = data.terraform_remote_state.platform.outputs.nonprod_aks_resource_group_name
