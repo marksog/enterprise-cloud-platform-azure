@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - commerce-application.yaml
   - orders-api-application.yaml
+  - payments-api-application.yaml
   - observability-application.yaml
   - observability-content-application.yaml
   - loki-application.yaml
