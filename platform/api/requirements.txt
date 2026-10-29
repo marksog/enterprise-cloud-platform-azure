@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+httpx
+pydantic
+pytest
+python-hcl2
+pyyaml

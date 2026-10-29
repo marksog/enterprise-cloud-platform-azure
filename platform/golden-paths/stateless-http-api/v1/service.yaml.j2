@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ workload.name }}
+  namespace: {{ workload.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ workload.name }}
+    app.kubernetes.io/managed-by: sog-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ workload.name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
