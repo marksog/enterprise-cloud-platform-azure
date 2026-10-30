@@ -81,9 +81,10 @@ jobs:
         run: |
           opa check --strict platform/policies/
 
-      - name: Verify policy evaluation
+      - name: Verify OPA policy decision
         run: |
-          echo '{
+          cat > /tmp/opa-input.json <<'EOF'
+          {
             "identity": {
               "groups": ["commerce-developers"]
             },
@@ -93,10 +94,20 @@ jobs:
               "environment": "nonprod",
               "size": "small"
             }
-          }' > /tmp/opa-input.json
+          }
+          EOF
 
-          opa eval \
+          DECISION=$(opa eval \
+            --format raw \
             --data platform/policies/ \
             --input /tmp/opa-input.json \
-            --fail-defined \
-            'data.sog.workload.decision'
+            'data.sog.workload.decision')
+
+          echo "OPA decision: $DECISION"
+
+          if [ "$DECISION" != "allow" ]; then
+            echo "ERROR: Expected allow, received $DECISION"
+            exit 1
+          fi
+
+          echo "OPA policy validation: PASSED"
