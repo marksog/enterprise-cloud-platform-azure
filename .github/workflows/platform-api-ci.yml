@@ -278,31 +278,25 @@ jobs:
         run: |
           docker compose -f compose.yaml stop opa
 
-      # ------------------------------------------------------
-      # Verify fail-closed behavior
-      # ------------------------------------------------------
-
       - name: Verify readiness fails closed
         run: |
-          python3 - <<'PY'
-          import time
-          import urllib.error
-          import urllib.request
+          echo "Testing API behavior when OPA is unavailable..."
 
-          BASE_URL = "http://127.0.0.1:8001"
+          health_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8001/health)
 
-          def get_status(path):
-              try:
-                  with urllib.request.urlopen(
-                      BASE_URL + path,
-                      timeout=5,
-                  ) as response:
-                      return response.status
+          ready_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8001/ready)
 
-              except urllib.error.HTTPError as error:
-                  return error.code
+          echo "Health status: $health_status"
+          echo "Readiness status: $ready_status"
 
-          health_status = get_status("/health")
+          if [ "$health_status" != "200" ]; then
+            echo "ERROR: API health endpoint should remain healthy"
+            exit 1
+          fi
 
-          assert health_status == 200, (
-              f
+          if [ "$ready_status" != "503" ]; then
+            echo "ERROR: API readiness should return 503 when OPA is unavailable"
+            exit 1
+          fi
+
+          echo "PASS: API remains alive but is not ready when OPA fails"
