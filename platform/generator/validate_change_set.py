@@ -153,7 +153,7 @@ if __name__ == "__main__":
     spec = WorkloadSpec(
         name="inventory-api",
         domain="commerce",
-        environment="nonprod",
+        environment="dev",
         size="small",
         namespace_mode="dedicated",
         image="sogplatformacr.azurecr.io/inventory-api:v1",
