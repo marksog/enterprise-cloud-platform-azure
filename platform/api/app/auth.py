@@ -6,6 +6,10 @@ Validates delegated access tokens issued by Microsoft Entra ID.
 
 from dataclasses import dataclass
 from functools import lru_cache
+import threading
+import time
+import ssl
+import certifi
 
 import jwt
 from fastapi import Depends, HTTPException
@@ -39,6 +43,55 @@ class AuthenticationError(Exception):
 class AuthenticationServiceUnavailable(Exception):
     """Raised when signing keys cannot be retrieved."""
 
+class ControlledJWKSClient(PyJWKClient):
+    """
+    JWKS client with process-local refresh coordination.
+
+    Limits repeated JWKS refresh attempts caused by
+    unknown signing-key IDs.
+    """
+
+    def __init__(
+        self,
+        uri: str,
+        refresh_cooldown: float = 30.0,
+        **kwargs,
+    ):
+        super().__init__(uri, **kwargs)
+
+        self._refresh_lock = threading.RLock()
+        self._refresh_cooldown = refresh_cooldown
+        self._last_refresh_attempt = 0.0
+
+    def get_signing_key(self, kid: str):
+        with self._refresh_lock:
+            return super().get_signing_key(kid)
+
+    def fetch_data(self):
+        with self._refresh_lock:
+            now = time.monotonic()
+
+            if (
+                self._last_refresh_attempt > 0
+                and now - self._last_refresh_attempt
+                < self._refresh_cooldown
+            ):
+                cached = (
+                    self.jwk_set_cache.get()
+                    if self.jwk_set_cache
+                    else None
+                )
+
+                if cached is not None:
+                    return cached
+
+                raise PyJWKClientError(
+                    "JWKS refresh temporarily throttled"
+                )
+
+            self._last_refresh_attempt = now
+
+            return super().fetch_data()
 
 @lru_cache(maxsize=1)
 def get_jwks_client() -> PyJWKClient:
@@ -53,11 +106,15 @@ def get_jwks_client() -> PyJWKClient:
         f"{TENANT_ID}/discovery/v2.0/keys"
     )
 
-    return PyJWKClient(
+    return ControlledJWKSClient(
         jwks_uri,
         cache_jwk_set=True,
         lifespan=300,
         timeout=5,
+        refresh_cooldown=30.0,
+        ssl_context=ssl.create_default_context(
+            cafile=certifi.where()
+        ),
     )
 
 

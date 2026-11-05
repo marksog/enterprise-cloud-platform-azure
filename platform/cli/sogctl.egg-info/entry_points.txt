@@ -1,0 +1,2 @@
+[console_scripts]
+sogctl = sogctl.main:app

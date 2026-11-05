@@ -13,6 +13,7 @@ import pytest
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 from jwt import PyJWKClient
+from jwt.exceptions import PyJWKClientError
 
 from app import auth
 from app.entra_config import (
@@ -212,3 +213,46 @@ def test_cached_key_remains_usable(monkeypatch):
 
     # Cached key means no network request was needed.
     assert client.fetch_count == 0
+
+def test_unknown_kid_refresh_is_throttled(monkeypatch):
+    """
+    Repeated unknown key IDs must not cause
+    unlimited JWKS network requests.
+    """
+
+    _, public_jwk = generate_key("known-key")
+
+    client = auth.ControlledJWKSClient(
+        "https://example.invalid/jwks",
+        lifespan=300,
+        refresh_cooldown=30.0,
+    )
+
+    fetch_count = 0
+
+    def fake_fetch():
+        nonlocal fetch_count
+        fetch_count += 1
+
+        data = {"keys": [public_jwk]}
+
+        if client.jwk_set_cache is not None:
+            client.jwk_set_cache.put(data)
+
+        return data
+
+    # Replace only the underlying network fetch.
+    # Keep the coordinator's fetch_data() method active.
+    monkeypatch.setattr(
+        PyJWKClient,
+        "fetch_data",
+        lambda self: fake_fetch(),
+    )
+
+    client.get_signing_key("known-key")
+
+    for index in range(20):
+        with pytest.raises(PyJWKClientError):
+            client.get_signing_key(f"fake-key-{index}")
+
+    assert fetch_count == 1

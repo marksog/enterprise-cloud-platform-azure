@@ -1,0 +1,12 @@
+services:
+  api:
+    environment:
+      PYTHONUNBUFFERED: "1"
+      LOG_LEVEL: debug
+
+    volumes:
+      - ./platform/api/app:/app/platform/api/app:ro
+
+  opa:
+    volumes:
+      - ./platform/policies:/policies:ro

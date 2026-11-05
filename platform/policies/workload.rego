@@ -10,7 +10,7 @@ authorized_domain if {
 }
 
 nonprod_environment if {
-    input.workload.environment == "nonprod"
+    input.workload.environment == "dev"
 }
 
 valid_size if {

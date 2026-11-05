@@ -6,3 +6,5 @@ pytest
 python-hcl2
 PyYAML
 jinja2
+PyJWT[crypto]
+certifi
