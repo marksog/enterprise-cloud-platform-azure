@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sogctl"
+version = "0.1.0"
+description = "SOG Internal Developer Platform CLI"
+requires-python = ">=3.11"
+dependencies = [
+    "msal>=1.30,<2",
+    "httpx>=0.27,<1",
+    "typer>=0.12,<1",
+    "keyring>=25,<27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<10",
+]
+
+[project.scripts]
+sogctl = "sogctl.main:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sogctl*"]

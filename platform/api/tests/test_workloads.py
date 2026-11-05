@@ -5,16 +5,41 @@ from unittest.mock import patch
 from app.main import app
 from app.policy import PolicyEngineUnavailableError
 
+from app.auth import DeveloperIdentity, get_current_developer
+from app.entra_config import COMMERCE_DEVELOPERS_GROUP_ID
+
 
 client = TestClient(app)
 
+@pytest.fixture(autouse=True)
+def authenticated_developer():
+    """
+    Provide an authenticated developer for workload tests.
+
+    This bypasses external Entra authentication only
+    inside the test environment.
+    """
+
+    app.dependency_overrides[get_current_developer] = (
+        lambda: DeveloperIdentity(
+            user_id="test-developer",
+            groups=(COMMERCE_DEVELOPERS_GROUP_ID,),
+        )
+    )
+
+    yield
+
+    app.dependency_overrides.pop(
+        get_current_developer,
+        None,
+    )
 
 @pytest.fixture
 def workload():
     return {
         "name": "inventory-api",
         "domain": "commerce",
-        "environment": "nonprod",
+        "environment": "dev",
         "size": "small",
         "namespace_mode": "dedicated",
         "exposure": "internal",

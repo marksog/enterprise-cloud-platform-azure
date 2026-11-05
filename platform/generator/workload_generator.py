@@ -10,7 +10,7 @@ import json
 # SOG PLATFORM — WORKLOAD GENERATOR
 # ============================================================
 
-SUPPORTED_ENVIRONMENTS = {"nonprod"}
+SUPPORTED_ENVIRONMENTS = {"dev", "staging", "prod"}
 SUPPORTED_SIZES = {"small", "medium", "large"}
 SUPPORTED_NAMESPACE_MODES = {"domain", "dedicated"}
 SUPPORTED_WORKLOAD_TYPES = {"stateless-http-api"}

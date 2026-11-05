@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "platform/**"
+      - "compose.yaml"
       - ".github/workflows/platform-api-ci.yml"
 
   push:
@@ -12,6 +13,7 @@ on:
       - feat/platform-api-foundation
     paths:
       - "platform/**"
+      - "compose.yaml"
       - ".github/workflows/platform-api-ci.yml"
 
 permissions:
@@ -22,6 +24,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  # ==========================================================
+  # JOB 1: PLATFORM API TESTS
+  # ==========================================================
+
   platform-tests:
     name: Platform API Tests
     runs-on: ubuntu-latest
@@ -40,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r platform/api/requirements.txt
+          python -m pip install -r platform/api/requirements.txt
 
       - name: Validate Python syntax
         run: |
@@ -55,6 +62,10 @@ jobs:
       - name: Validate generated Terraform and GitOps
         run: |
           python platform/generator/validate_change_set.py
+
+  # ==========================================================
+  # JOB 2: OPA POLICY VALIDATION
+  # ==========================================================
 
   opa-validation:
     name: OPA Policy Validation
@@ -81,7 +92,7 @@ jobs:
         run: |
           opa check --strict platform/policies/
 
-      - name: Verify OPA policy decision
+      - name: Verify authorized developer is allowed
         run: |
           cat > /tmp/opa-input.json <<'EOF'
           {
@@ -91,7 +102,7 @@ jobs:
             "workload": {
               "name": "inventory-api",
               "domain": "commerce",
-              "environment": "nonprod",
+              "environment": "dev",
               "size": "small"
             }
           }
@@ -110,4 +121,182 @@ jobs:
             exit 1
           fi
 
-          echo "OPA policy validation: PASSED"
+          echo "Authorized developer: PASSED"
+
+      - name: Verify unauthorized developer is denied
+        run: |
+          cat > /tmp/opa-input.json <<'EOF'
+          {
+            "identity": {
+              "groups": ["finance-developers"]
+            },
+            "workload": {
+              "name": "inventory-api",
+              "domain": "commerce",
+              "environment": "dev",
+              "size": "small"
+            }
+          }
+          EOF
+
+          DECISION=$(opa eval \
+            --format raw \
+            --data platform/policies/ \
+            --input /tmp/opa-input.json \
+            'data.sog.workload.decision')
+
+          echo "OPA decision: $DECISION"
+
+          if [ "$DECISION" != "deny" ]; then
+            echo "ERROR: Expected deny, received $DECISION"
+            exit 1
+          fi
+
+          echo "Unauthorized developer: PASSED"
+
+  # ==========================================================
+  # JOB 3: CONTAINER INTEGRATION TESTS
+  # ==========================================================
+
+  container-integration:
+    name: Container Integration Tests
+    runs-on: ubuntu-latest
+
+    needs:
+      - platform-tests
+      - opa-validation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------
+      # Build and start containers
+      # ------------------------------------------------------
+
+      - name: Build and start platform services
+        run: |
+          docker compose -f compose.yaml up --build -d
+
+      # ------------------------------------------------------
+      # Verify API readiness
+      # ------------------------------------------------------
+
+      - name: Wait for API readiness
+        run: |
+          echo "Waiting for FastAPI and OPA..."
+
+          for i in $(seq 1 30); do
+
+            if curl --fail --silent \
+              http://127.0.0.1:8001/ready > /dev/null; then
+
+              echo "Platform is ready"
+              exit 0
+            fi
+
+            echo "Attempt $i: Platform not ready"
+            sleep 2
+
+          done
+
+          echo "ERROR: Platform failed readiness"
+          exit 1
+
+      # ------------------------------------------------------
+      # Verify API liveness
+      # ------------------------------------------------------
+
+      - name: Verify API liveness
+        run: |
+          curl --fail --show-error \
+            http://127.0.0.1:8001/health
+
+      # ------------------------------------------------------
+      # Test real OPA authorization
+      # ------------------------------------------------------
+
+      - name: Verify OPA allow and deny decisions
+        run: |
+          docker compose -f compose.yaml exec -T api python - <<'PY'
+          import httpx
+
+          url = "http://opa:8181/v1/data/sog/workload/decision"
+
+          workload = {
+              "name": "inventory-api",
+              "domain": "commerce",
+              "environment": "dev",
+              "size": "small",
+          }
+
+          test_cases = [
+              ("commerce-developers", "allow"),
+              ("finance-developers", "deny"),
+          ]
+
+          for group, expected in test_cases:
+
+              payload = {
+                  "input": {
+                      "identity": {
+                          "groups": [group]
+                      },
+                      "workload": workload,
+                  }
+              }
+
+              response = httpx.post(
+                  url,
+                  json=payload,
+                  timeout=5,
+              )
+
+              response.raise_for_status()
+
+              actual = response.json().get("result")
+
+              print(
+                  f"Group: {group}, "
+                  f"Expected: {expected}, "
+                  f"Actual: {actual}"
+              )
+
+              assert actual == expected, (
+                  f"Authorization failed for {group}: "
+                  f"expected {expected}, got {actual}"
+              )
+
+          print("OPA authorization integration: PASSED")
+          PY
+
+      # ------------------------------------------------------
+      # Simulate OPA failure
+      # ------------------------------------------------------
+
+      - name: Stop OPA
+        run: |
+          docker compose -f compose.yaml stop opa
+
+      - name: Verify readiness fails closed
+        run: |
+          echo "Testing API behavior when OPA is unavailable..."
+
+          health_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8001/health)
+
+          ready_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8001/ready)
+
+          echo "Health status: $health_status"
+          echo "Readiness status: $ready_status"
+
+          if [ "$health_status" != "200" ]; then
+            echo "ERROR: API health endpoint should remain healthy"
+            exit 1
+          fi
+
+          if [ "$ready_status" != "503" ]; then
+            echo "ERROR: API readiness should return 503 when OPA is unavailable"
+            exit 1
+          fi
+
+          echo "PASS: API remains alive but is not ready when OPA fails"

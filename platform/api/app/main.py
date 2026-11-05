@@ -16,7 +16,9 @@ import os
 import sys
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from app.auth import DeveloperIdentity, get_current_developer
+from app.identity_mapping import map_developer_identity
 
 from app.models import (
     PolicyDecision,
@@ -75,6 +77,74 @@ def health():
         "version": "0.3.0",
     }
 
+# --------------------------------------------------
+# Authenticated developer identity
+# --------------------------------------------------
+
+@app.get("/v1/me")
+def get_my_identity(
+    developer: DeveloperIdentity = Depends(get_current_developer),
+):
+    identity = map_developer_identity(developer)
+
+    return {
+        "developer_id": identity["id"],
+        "groups": identity["groups"],
+    }
+
+import os
+
+import httpx
+from fastapi import Response
+
+OPA_URL = os.getenv(
+    "OPA_URL",
+    "http://127.0.0.1:8181/v1/data/sog/workload/decision",
+)
+
+
+@app.get("/ready")
+async def readiness(response: Response):
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            opa_response = await client.post(
+                OPA_URL,
+                json={
+                    "input": {
+                        "identity": {"groups": []},
+                        "workload": {},
+                    }
+                },
+            )
+
+            opa_response.raise_for_status()
+            result = opa_response.json()
+
+            if "result" not in result:
+                response.status_code = 503
+                return {
+                    "status": "not_ready",
+                    "reason": "authorization_policy_unavailable",
+                }
+
+            return {
+                "status": "ready",
+                "dependencies": {
+                    "opa": "ready",
+                },
+            }
+
+    except (
+        httpx.RequestError,
+        httpx.HTTPStatusError,
+        ValueError,
+    ):
+        response.status_code = 503
+
+        return {
+            "status": "not_ready",
+            "reason": "policy_engine_unavailable",
+        }
 
 # --------------------------------------------------
 # Workload onboarding
@@ -84,21 +154,18 @@ def health():
     "/v1/workloads",
     response_model=WorkloadResponse,
 )
-def create_workload(request: WorkloadRequest):
+def create_workload(
+    request: WorkloadRequest,
+    developer: DeveloperIdentity = Depends(get_current_developer),
+):
 
-    # LOCAL DEVELOPMENT ONLY.
-    # This identity must be replaced with verified OIDC
-    # authentication before enabling GitHub writes.
-    identity = {
-        "id": "local-commerce-developer",
-        "groups": ["commerce-developers"],
-    }
+    identity = map_developer_identity(developer)
 
     # Step 1: Evaluate organizational policy.
     try:
         decision = evaluate_policy(
             workload=request.model_dump(mode="json"),
-            identity=identity,
+            identity = identity,
         )
 
     except PolicyEngineUnavailableError as exc:
