@@ -326,7 +326,7 @@ jobs:
           docker compose -f compose.yaml build api
 
       - name: Generate vulnerability report
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.33.0
         with:
           image-ref: sog-platform-api:dev
           scan-type: image
@@ -345,7 +345,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Block fixable HIGH and CRITICAL vulnerabilities
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.33.0
         with:
           image-ref: sog-platform-api:dev
           scan-type: image
