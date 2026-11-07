@@ -5,22 +5,30 @@ metadata:
   labels:
     app.kubernetes.io/name: platform-api
     app.kubernetes.io/part-of: sog-platform
+
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app.kubernetes.io/name: platform-api
+
   template:
     metadata:
       labels:
         app.kubernetes.io/name: platform-api
         app.kubernetes.io/part-of: sog-platform
+
     spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
 
       containers:
+
+        # ==========================================
+        # PLATFORM API CONTAINER
+        # ==========================================
         - name: platform-api
           image: sogplatformacr.azurecr.io/platform-api@sha256:30c1cbf9eee29354d8f504b1aa6003fedcd989a70d9d044e41efadd4ac4cec81
           imagePullPolicy: IfNotPresent
@@ -32,8 +40,10 @@ spec:
           env:
             - name: SOG_ENTRA_TENANT_ID
               value: "b854e21e-defb-4268-8398-05ca9757a1af"
+
             - name: SOG_ENTRA_API_CLIENT_ID
               value: "c705d7f9-8c81-4649-88b4-55b530b50353"
+
             - name: OPA_URL
               value: "http://127.0.0.1:8181/v1/data/sog/workload/decision"
 
@@ -45,6 +55,7 @@ spec:
               cpu: 500m
               memory: 512Mi
 
+          # Checks whether the API has started
           startupProbe:
             httpGet:
               path: /health
@@ -52,6 +63,8 @@ spec:
             periodSeconds: 5
             failureThreshold: 24
 
+          # Checks whether the API is ready
+          # The API must also verify OPA availability
           readinessProbe:
             httpGet:
               path: /ready
@@ -59,6 +72,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
 
+          # Checks whether the API is alive
           livenessProbe:
             httpGet:
               path: /health
@@ -76,6 +90,9 @@ spec:
               drop:
                 - ALL
 
+        # ==========================================
+        # OPA AUTHORIZATION SIDECAR
+        # ==========================================
         - name: opa
           image: openpolicyagent/opa:1.4.2-static
           imagePullPolicy: IfNotPresent
@@ -103,11 +120,8 @@ spec:
               cpu: 250m
               memory: 256Mi
 
-          readinessProbe:
-            httpGet:
-              path: /health?plugins
-              port: opa
-            periodSeconds: 10
+          # No separate OPA readiness probe.
+          # Platform API /ready checks the OPA dependency.
 
           securityContext:
             allowPrivilegeEscalation: false
@@ -119,6 +133,9 @@ spec:
               drop:
                 - ALL
 
+      # ==========================================
+      # OPA POLICY CONFIGURATION
+      # ==========================================
       volumes:
         - name: opa-policy
           configMap:
