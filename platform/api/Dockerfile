@@ -27,6 +27,13 @@ COPY --from=builder /install /usr/local
 COPY platform/api/app /app/platform/api/app
 COPY platform/generator /app/platform/generator
 
+# Required by the workload generator
+COPY terraform/workloads/nonprod/workloads.auto.tfvars \
+     /app/terraform/workloads/nonprod/workloads.auto.tfvars
+
+# Required for existing workload detection and GitOps generation
+COPY gitops/workloads /app/gitops/workloads
+
 # Create an unprivileged application user.
 # Remove pip from the runtime image.
 RUN useradd --create-home --uid 10001 appuser \
