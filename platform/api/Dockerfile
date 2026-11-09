@@ -16,6 +16,11 @@ RUN python -m pip install \
 # Stage 2: Production runtime
 FROM python:3.13-slim AS runtime
 
+# Apply Debian security updates to the final runtime image.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/platform/api:/app
@@ -26,6 +31,13 @@ COPY --from=builder /install /usr/local
 
 COPY platform/api/app /app/platform/api/app
 COPY platform/generator /app/platform/generator
+
+# Required by the workload generator
+COPY terraform/workloads/nonprod/workloads.auto.tfvars \
+     /app/terraform/workloads/nonprod/workloads.auto.tfvars
+
+# Required for existing workload detection and GitOps generation
+COPY gitops/workloads /app/gitops/workloads
 
 # Create an unprivileged application user.
 # Remove pip from the runtime image.
