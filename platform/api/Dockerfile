@@ -16,6 +16,11 @@ RUN python -m pip install \
 # Stage 2: Production runtime
 FROM python:3.13-slim AS runtime
 
+# Apply Debian security updates to the final runtime image.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/platform/api:/app
