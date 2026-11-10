@@ -39,6 +39,9 @@ COPY terraform/workloads/nonprod/workloads.auto.tfvars \
 # Required for existing workload detection and GitOps generation
 COPY gitops/workloads /app/gitops/workloads
 
+# Golden-path templates required for workload generation
+COPY platform/golden-paths /app/platform/golden-paths
+
 # Create an unprivileged application user.
 # Remove pip from the runtime image.
 RUN useradd --create-home --uid 10001 appuser \
