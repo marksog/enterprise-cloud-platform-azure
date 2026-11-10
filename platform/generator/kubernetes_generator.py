@@ -24,6 +24,10 @@ class KubernetesWorkload:
     port: int
     size: str
 
+    startup_path: str = "/health"
+    readiness_path: str = "/ready"
+    liveness_path: str = "/health"
+
 
 RESOURCE_PROFILES = {
     "small": {
@@ -72,6 +76,21 @@ class KubernetesGenerator:
         )
 
     def generate(self, workload: KubernetesWorkload) -> dict[str, str]:
+        for path in (
+            workload.startup_path,
+            workload.readiness_path,
+            workload.liveness_path,
+        ):
+            if (
+                not isinstance(path, str)
+                or not path.startswith("/")
+                or len(path) > 256
+                or any(character.isspace() for character in path)
+            ):
+                raise ValueError(
+                    "Probe paths must be absolute HTTP paths "
+                    "without whitespace and at most 256 characters"
+                )
         if workload.size not in RESOURCE_PROFILES:
             raise ValueError("Unsupported workload size")
 

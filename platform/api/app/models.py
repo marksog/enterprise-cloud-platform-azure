@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class WorkloadSize(str, Enum):
     SMALL = "small"
@@ -14,6 +14,30 @@ class NamespaceMode(str, Enum):
 class Exposure(str, Enum):
     INTERNAL = "internal"
     PUBLIC = "public"
+
+class HealthProbeConfig(BaseModel):
+    startup_path: str = "/health"
+    readiness_path: str = "/ready"
+    liveness_path: str = "/health"
+
+    @field_validator(
+        "startup_path",
+        "readiness_path",
+        "liveness_path",
+    )
+    @classmethod
+    def validate_probe_path(cls, value: str) -> str:
+        if (
+            not value.startswith("/")
+            or len(value) > 256
+            or any(character.isspace() for character in value)
+        ):
+            raise ValueError(
+                "Probe path must start with '/', "
+                "contain no whitespace, and be at most 256 characters"
+            )
+
+        return value
 
 class WorkloadRequest(BaseModel):
     name: str = Field(
@@ -34,6 +58,10 @@ class WorkloadRequest(BaseModel):
 
     justification: str | None = None
 
+    create_pull_request: bool = False
+
+    health: HealthProbeConfig = Field(default_factory=HealthProbeConfig)
+
 class PolicyDecision(BaseModel):
     decision: str
     reasons: list[str] = Field(default_factory=list)
@@ -45,6 +73,8 @@ class PullRequestPreviewResponse(BaseModel):
     title: str
     files: list[str]
     dry_run: bool
+    number: int | None = None
+    url: str | None = None
 
 class WorkloadResponse(BaseModel):
     workload: str
@@ -53,3 +83,26 @@ class WorkloadResponse(BaseModel):
     policy: PolicyDecision
     pull_request: PullRequestPreviewResponse | None = None
 
+class HealthProbeConfig(BaseModel):
+    startup_path: str = "/health"
+    readiness_path: str = "/ready"
+    liveness_path: str = "/health"
+
+    @field_validator(
+        "startup_path",
+        "readiness_path",
+        "liveness_path",
+    )
+    @classmethod
+    def validate_probe_path(cls, value: str) -> str:
+        if (
+            not value.startswith("/")
+            or len(value) > 256
+            or any(character.isspace() for character in value)
+        ):
+            raise ValueError(
+                "Probe path must start with '/', "
+                "contain no whitespace, and be at most 256 characters"
+            )
+
+        return value
