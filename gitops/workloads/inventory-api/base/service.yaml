@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-api
+  namespace: sog-dev-commerce-inventory-api
+  labels:
+    app.kubernetes.io/name: inventory-api
+    app.kubernetes.io/managed-by: sog-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: inventory-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

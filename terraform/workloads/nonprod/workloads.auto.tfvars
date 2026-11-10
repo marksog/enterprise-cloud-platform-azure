@@ -25,4 +25,13 @@ workloads = {
     exposure       = "internal"
     namespace_mode = "dedicated"
   }
+
+  "inventory-api" = {
+    domain         = "commerce"
+    image          = "sogplatformacr.azurecr.io/inventory-api:v1"
+    port           = 8080
+    size           = "small"
+    exposure       = "internal"
+    namespace_mode = "dedicated"
+  }
 }
