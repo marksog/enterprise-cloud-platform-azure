@@ -151,12 +151,12 @@ if __name__ == "__main__":
     repository_root = Path(__file__).resolve().parents[2]
 
     spec = WorkloadSpec(
-        name="inventory-api",
+        name="catalog-api",
         domain="commerce",
         environment="dev",
         size="small",
         namespace_mode="dedicated",
-        image="sogplatformacr.azurecr.io/inventory-api:v1",
+        image="sogplatformacr.azurecr.io/catalog-api:v1",
         port=8080,
     )
 
