@@ -64,6 +64,9 @@ class ChangeSetAssembler:
             image=spec.image,
             port=spec.port,
             size=spec.size,
+            startup_path=spec.startup_path,
+            readiness_path=spec.readiness_path,
+            liveness_path=spec.liveness_path,
         )
 
         manifests = self.kubernetes_generator.generate(

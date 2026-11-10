@@ -29,6 +29,31 @@ spec:
           ports:
             - name: http
               containerPort: {{ workload.port }}
+
+          startupProbe:
+            httpGet:
+              path: {{ workload.startup_path }}
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 12
+
+          readinessProbe:
+            httpGet:
+              path: {{ workload.readiness_path }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: {{ workload.liveness_path }}
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+
           resources:
             requests:
               cpu: {{ profile.cpu_request }}

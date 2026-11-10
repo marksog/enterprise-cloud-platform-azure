@@ -113,4 +113,160 @@ def test_duplicate_workload(mock_policy, workload):
     response = client.post("/v1/workloads", json=workload)
 
     assert response.status_code == 422
-    assert "already registered" in response.json()["detail"] 
+    assert "already registered" in response.json()["detail"]
+
+def test_kubernetes_generator_default_probes():
+    import sys
+    from pathlib import Path
+    import yaml
+
+    generator_dir = Path(__file__).resolve().parents[2] / "generator"
+    sys.path.insert(0, str(generator_dir))
+
+    from kubernetes_generator import KubernetesGenerator, KubernetesWorkload
+
+    workload = KubernetesWorkload(
+        name="inventory-api",
+        namespace="sog-dev-commerce-inventory-api",
+        image="sogplatformacr.azurecr.io/inventory-api:v1",
+        port=8080,
+        size="small",
+    )
+
+    deployment = yaml.safe_load(
+        KubernetesGenerator().generate(workload)["deployment.yaml"]
+    )
+
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+
+    assert container["startupProbe"]["httpGet"]["path"] == "/health"
+    assert container["readinessProbe"]["httpGet"]["path"] == "/ready"
+    assert container["livenessProbe"]["httpGet"]["path"] == "/health"
+
+    assert all(
+        container[probe]["httpGet"]["port"] == "http"
+        for probe in ("startupProbe", "readinessProbe", "livenessProbe")
+    )
+
+
+def test_kubernetes_generator_custom_probes():
+    import sys
+    from pathlib import Path
+    import yaml
+
+    generator_dir = Path(__file__).resolve().parents[2] / "generator"
+    sys.path.insert(0, str(generator_dir))
+
+    from kubernetes_generator import KubernetesGenerator, KubernetesWorkload
+
+    workload = KubernetesWorkload(
+        name="inventory-api",
+        namespace="sog-dev-commerce-inventory-api",
+        image="sogplatformacr.azurecr.io/inventory-api:v1",
+        port=8080,
+        size="small",
+        startup_path="/startup",
+        readiness_path="/api/ready",
+        liveness_path="/api/health",
+    )
+
+    deployment = yaml.safe_load(
+        KubernetesGenerator().generate(workload)["deployment.yaml"]
+    )
+
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+
+    assert container["startupProbe"]["httpGet"]["path"] == "/startup"
+    assert container["readinessProbe"]["httpGet"]["path"] == "/api/ready"
+    assert container["livenessProbe"]["httpGet"]["path"] == "/api/health"
+
+
+def test_kubernetes_generator_rejects_invalid_probe_paths():
+    import sys
+    from pathlib import Path
+    import pytest
+
+    generator_dir = Path(__file__).resolve().parents[2] / "generator"
+    sys.path.insert(0, str(generator_dir))
+
+    from kubernetes_generator import KubernetesGenerator, KubernetesWorkload
+
+    for invalid_path in ("ready", "/bad path", ""):
+        workload = KubernetesWorkload(
+            name="inventory-api",
+            namespace="sog-dev-commerce-inventory-api",
+            image="sogplatformacr.azurecr.io/inventory-api:v1",
+            port=8080,
+            size="small",
+            readiness_path=invalid_path,
+        )
+
+        with pytest.raises(ValueError):
+            KubernetesGenerator().generate(workload)
+
+def test_invalid_health_probe_returns_422(workload):
+    workload["health"] = {
+        "readiness_path": "invalid-path"
+    }
+
+    response = client.post("/v1/workloads", json=workload)
+
+    assert response.status_code == 422
+
+
+@patch("app.main.evaluate_policy", return_value="allow")
+def test_custom_health_probes_in_generated_deployment(
+    mock_policy, workload, monkeypatch
+):
+    import sys
+    from pathlib import Path
+    import yaml
+
+    generator_dir = Path(__file__).resolve().parents[2] / "generator"
+    sys.path.insert(0, str(generator_dir))
+
+    from kubernetes_generator import KubernetesGenerator
+
+    generated_deployments = []
+    original_generate = KubernetesGenerator.generate
+
+    def capture_generate(self, kubernetes_workload):
+        manifests = original_generate(self, kubernetes_workload)
+        generated_deployments.append(manifests["deployment.yaml"])
+        return manifests
+
+    monkeypatch.setattr(
+        KubernetesGenerator,
+        "generate",
+        capture_generate,
+    )
+
+    workload["health"] = {
+        "startup_path": "/startup",
+        "readiness_path": "/readyz",
+        "liveness_path": "/livez",
+    }
+
+    response = client.post("/v1/workloads", json=workload)
+
+    assert response.status_code == 200
+    mock_policy.assert_called_once()
+
+    files = response.json()["pull_request"]["files"]
+
+    assert any(
+        path.endswith("deployment.yaml")
+        for path in files
+    )
+
+    assert len(generated_deployments) == 1, (
+        "The workload endpoint did not invoke the Kubernetes generator"
+    )
+
+    deployment = yaml.safe_load(generated_deployments[0])
+
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+
+    assert container["startupProbe"]["httpGet"]["path"] == "/startup"
+    assert container["readinessProbe"]["httpGet"]["path"] == "/readyz"
+    assert container["livenessProbe"]["httpGet"]["path"] == "/livez"

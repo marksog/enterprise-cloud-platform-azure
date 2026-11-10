@@ -199,6 +199,9 @@ def create_workload(
         namespace_mode=request.namespace_mode.value,
         image=request.image,
         port=request.port,
+        startup_path=request.health.startup_path,
+        readiness_path=request.health.readiness_path,
+        liveness_path=request.health.liveness_path,
     )
 
     # Step 4: Generate Terraform and GitOps configuration.
@@ -219,6 +222,17 @@ def create_workload(
             detail=str(exc),
         ) from exc
 
+    created_pr = None
+    if request.create_pull_request:
+        try:
+            created_pr = github.create_pull_request(preview, changes)
+
+        except GitHubChangeError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=str(exc),
+            ) from exc
+
     # Step 6: Return proposed changes.
     return WorkloadResponse(
         workload=request.name,
@@ -231,6 +245,8 @@ def create_workload(
             base_branch=preview.base_branch,
             title=preview.title,
             files=list(preview.files),
-            dry_run=preview.dry_run,
+            dry_run=created_pr is None,
+            number=created_pr.number if created_pr else None,
+            url=created_pr.url if created_pr else None,
         ),
     )

@@ -35,6 +35,10 @@ class WorkloadSpec:
     port: int
     workload_type: str = "stateless-http-api"
 
+    startup_path: str = "/health"
+    readiness_path: str = "/ready"
+    liveness_path: str = "/health"
+
 
 class WorkloadGenerator:
     """
