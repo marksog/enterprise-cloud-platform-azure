@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: inventory-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/marksog/enterprise-cloud-platform-azure.git
+    targetRevision: main
+    path: gitops/workloads/inventory-api/overlays/nonprod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sog-dev-commerce-inventory-api
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=false

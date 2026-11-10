@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inventory-api-default-deny
+  namespace: sog-dev-commerce-inventory-api
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: inventory-api
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inventory-api-allow-dns
+  namespace: sog-dev-commerce-inventory-api
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: inventory-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inventory-api-allow-prometheus
+  namespace: sog-dev-commerce-inventory-api
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: inventory-api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sog-nonprod-observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 8080

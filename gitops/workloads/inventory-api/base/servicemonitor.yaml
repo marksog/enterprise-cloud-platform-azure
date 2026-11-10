@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: inventory-api
+  namespace: sog-dev-commerce-inventory-api
+  labels:
+    app.kubernetes.io/name: inventory-api
+    release: sog-observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inventory-api
+  endpoints:
+    - port: http
+      path: /metrics/
+      interval: 30s
