@@ -37,13 +37,13 @@ def authenticated_developer():
 @pytest.fixture
 def workload():
     return {
-        "name": "inventory-api",
+        "name": "catalog-api",
         "domain": "commerce",
         "environment": "dev",
         "size": "small",
         "namespace_mode": "dedicated",
         "exposure": "internal",
-        "image": "sogplatformacr.azurecr.io/inventory-api:v1",
+        "image": "sogplatformacr.azurecr.io/catalog-api:v1",
         "port": 8080,
     }
 
