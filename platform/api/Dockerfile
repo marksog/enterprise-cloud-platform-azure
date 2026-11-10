@@ -38,6 +38,8 @@ COPY terraform/workloads/nonprod/workloads.auto.tfvars \
 
 # Required for existing workload detection and GitOps generation
 COPY gitops/workloads /app/gitops/workloads
+COPY gitops/domains /app/gitops/domains
+COPY gitops/bootstrap/nonprod /app/gitops/bootstrap/nonprod
 
 # Golden-path templates required for workload generation
 COPY platform/golden-paths /app/platform/golden-paths
