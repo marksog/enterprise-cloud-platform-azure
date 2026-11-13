@@ -19,12 +19,15 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException
 from app.auth import DeveloperIdentity, get_current_developer
 from app.identity_mapping import map_developer_identity
+from repository_factory import RepositoryFactory, RepositoryFactoryError
 
 from app.models import (
     PolicyDecision,
     PullRequestPreviewResponse,
     WorkloadRequest,
     WorkloadResponse,
+    ApplicationRequest,
+    ApplicationResponse,
 )
 
 from app.policy import (
@@ -249,4 +252,81 @@ def create_workload(
             number=created_pr.number if created_pr else None,
             url=created_pr.url if created_pr else None,
         ),
+    )
+
+@app.post(
+    "/v1/applications",
+    response_model=ApplicationResponse,
+)
+def create_application(
+    request: ApplicationRequest,
+    developer: DeveloperIdentity = Depends(get_current_developer),
+):
+    identity = map_developer_identity(developer)
+
+    # Evaluate policy before any repository creation.
+    try:
+        decision = evaluate_policy(
+            workload={
+                "name": request.name,
+                "domain": request.domain,
+                "environment": request.environment,
+                "size": "small",
+                "namespace_mode": "shared",
+                "exposure": "internal",
+            },
+            identity=identity,
+        )
+    except PolicyEngineUnavailableError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Policy engine unavailable; request not approved",
+        ) from exc
+
+    policy = PolicyDecision(
+        decision=decision,
+        reasons=[],
+    )
+
+    # Denied or approval-required requests must never provision.
+    if decision != "allow":
+        return ApplicationResponse(
+            application=request.name,
+            domain=request.domain,
+            environment=request.environment,
+            policy=policy,
+            dry_run=True,
+            repository_url=None,
+        )
+
+    # Preview is the safe default.
+    if not request.create_repository:
+        return ApplicationResponse(
+            application=request.name,
+            domain=request.domain,
+            environment=request.environment,
+            policy=policy,
+            dry_run=True,
+            repository_url=None,
+        )
+
+    try:
+        created = RepositoryFactory(github).create_repository(
+            name=request.name,
+            description=request.description,
+            private=True,
+        )
+    except RepositoryFactoryError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=str(exc),
+        ) from exc
+
+    return ApplicationResponse(
+        application=request.name,
+        domain=request.domain,
+        environment=request.environment,
+        policy=policy,
+        dry_run=False,
+        repository_url=created.url,
     )

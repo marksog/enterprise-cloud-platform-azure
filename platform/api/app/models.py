@@ -106,3 +106,23 @@ class HealthProbeConfig(BaseModel):
             )
 
         return value
+
+class ApplicationRequest(BaseModel):
+    name: str = Field(
+        min_length=3,
+        max_length=40,
+        pattern=r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])$",
+    )
+    domain: str
+    environment: str
+    description: str = ""
+    create_repository: bool = False
+
+
+class ApplicationResponse(BaseModel):
+    application: str
+    domain: str
+    environment: str
+    policy: PolicyDecision
+    dry_run: bool
+    repository_url: str | None = None

@@ -112,9 +112,17 @@ class GitHubClient:
             files=tuple(sorted(changes)),
         )
 
-    def _installation_token(self) -> str:
+    def _installation_token(
+        self,
+        installation_id: str | None = None,
+    ) -> str:
         app_id = os.getenv("GITHUB_APP_ID")
-        installation_id = os.getenv("GITHUB_APP_INSTALLATION_ID")
+
+        installation_id = (
+            installation_id
+            or os.getenv("GITHUB_APP_INSTALLATION_ID")
+        )
+
         key_path = os.getenv("GITHUB_APP_PRIVATE_KEY_PATH")
 
         if not all((app_id, installation_id, key_path)):
