@@ -11,3 +11,4 @@ resources:
 - storage-application.yaml
 - alloy-application.yaml
 - inventory-api-application.yaml
+- commerce-test-api-application.yaml
