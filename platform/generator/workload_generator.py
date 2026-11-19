@@ -112,7 +112,7 @@ class WorkloadGenerator:
         self.validate(spec)
 
         domain_namespace = (
-            f"sog-{spec.environment}-{spec.domain}"
+            f"sog-nonprod-{spec.domain}"
         )
 
         if spec.namespace_mode == "domain":
