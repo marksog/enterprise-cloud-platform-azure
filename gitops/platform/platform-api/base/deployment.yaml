@@ -34,7 +34,7 @@ spec:
         # PLATFORM API CONTAINER
         # ==========================================
         - name: platform-api
-          image: sogplatformacr.azurecr.io/platform-api@sha256:dec94964b00e28ae26446e3b12372c1048660ccdac024377c3d00c33ff0a0550
+          image: sogplatformacr.azurecr.io/platform-api@sha256:608510e75aa014f7dba09b5cbec953375c32532c34bc0521b4479d9c9973d163
           imagePullPolicy: IfNotPresent
 
           ports:
