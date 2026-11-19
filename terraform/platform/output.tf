@@ -75,3 +75,17 @@ output "prod_aks_location" {
   description = "Azure region of the Production AKS platform."
   value       = azurerm_kubernetes_cluster.prod.location
 }
+
+# ============================================================
+# PLATFORM API IDENTITY OUTPUTS
+# ============================================================
+
+output "nonprod_platform_api_identity_client_id" {
+  description = "Client ID of the nonproduction Platform API identity."
+  value       = azurerm_user_assigned_identity.nonprod_platform_api.client_id
+}
+
+output "nonprod_platform_api_identity_principal_id" {
+  description = "Principal ID of the nonproduction Platform API identity."
+  value       = azurerm_user_assigned_identity.nonprod_platform_api.principal_id
+}

@@ -297,3 +297,39 @@ resource "azurerm_kubernetes_cluster_node_pool" "nonprod_user" {
     NodePool    = "user"
   }
 }
+
+# ============================================================
+# NONPROD PLATFORM API WORKLOAD IDENTITY
+# ============================================================
+
+resource "azurerm_user_assigned_identity" "nonprod_platform_api" {
+  provider = azurerm.nonprod
+
+  name                = "sog-nonprod-platform-api-identity"
+  location            = azurerm_resource_group.nonprod_platform.location
+  resource_group_name = azurerm_resource_group.nonprod_platform.name
+
+  tags = {
+    CostCenter  = "nonproduction"
+    Domain      = "platform"
+    Environment = "nonprod"
+    ManagedBy   = "terraform"
+    Owner       = "platform-team"
+    Workload    = "platform-api"
+  }
+}
+
+resource "azurerm_federated_identity_credential" "nonprod_platform_api" {
+  provider = azurerm.nonprod
+
+  name                = "platform-api-aks-federation"
+  resource_group_name = azurerm_resource_group.nonprod_platform.name
+  parent_id           = azurerm_user_assigned_identity.nonprod_platform_api.id
+
+  issuer  = azurerm_kubernetes_cluster.nonprod.oidc_issuer_url
+  subject = "system:serviceaccount:platform-system:platform-api"
+
+  audience = [
+    "api://AzureADTokenExchange"
+  ]
+}

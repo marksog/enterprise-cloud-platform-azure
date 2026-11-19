@@ -18,9 +18,13 @@ spec:
       labels:
         app.kubernetes.io/name: platform-api
         app.kubernetes.io/part-of: sog-platform
+        azure.workload.identity/use: "true"
 
     spec:
+      serviceAccountName: platform-api
       securityContext:
+        runAsNonRoot: true
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
 
@@ -46,6 +50,20 @@ spec:
 
             - name: OPA_URL
               value: "http://127.0.0.1:8181/v1/data/sog/workload/decision"
+
+            - name: GITHUB_APP_ID
+              value: "5699497"
+
+            - name: GITHUB_APP_INSTALLATION_ID
+              value: "180581500"
+
+            - name: GITHUB_APP_PRIVATE_KEY_PATH
+              value: "/mnt/secrets/github-app.pem"
+
+          volumeMounts:
+            - name: github-app-key
+              mountPath: /mnt/secrets
+              readOnly: true
 
           resources:
             requests:
@@ -140,3 +158,10 @@ spec:
         - name: opa-policy
           configMap:
             name: platform-api-opa-policy
+
+        - name: github-app-key
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: platform-api-github-app
