@@ -63,6 +63,7 @@ spec:
               memory: {{ profile.memory_limit }}
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
