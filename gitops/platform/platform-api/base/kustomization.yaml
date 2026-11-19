@@ -3,8 +3,10 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - serviceaccount.yaml
   - deployment.yaml
   - service.yaml
+  - secretproviderclass.yaml
 
 configMapGenerator:
   - name: platform-api-opa-policy
