@@ -19,7 +19,6 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException
 from app.auth import DeveloperIdentity, get_current_developer
 from app.identity_mapping import map_developer_identity
-from repository_factory import RepositoryFactory, RepositoryFactoryError
 
 from app.models import (
     PolicyDecision,
@@ -49,6 +48,7 @@ sys.path.insert(0, str(GENERATOR_PATH))
 from change_set import ChangeSetAssembler
 from github_client import GitHubClient, GitHubChangeError
 from workload_generator import WorkloadSpec, WorkloadValidationError
+from repository_factory import RepositoryFactory, RepositoryFactoryError
 
 
 # --------------------------------------------------
