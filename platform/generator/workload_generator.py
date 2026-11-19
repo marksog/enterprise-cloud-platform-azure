@@ -111,8 +111,20 @@ class WorkloadGenerator:
 
         self.validate(spec)
 
+        # Logical deployment stages map to the nonproduction AKS environment.
+        # Production requires a separate Terraform/GitOps onboarding flow.
+        infrastructure_environments = {
+            "dev": "nonprod",
+            "staging": "nonprod",
+        }
+        if spec.environment not in infrastructure_environments:
+            raise WorkloadValidationError(
+                "Production onboarding is not supported by this generator"
+            )
+
+        infrastructure_environment = infrastructure_environments[spec.environment]
         domain_namespace = (
-            f"sog-{spec.environment}-{spec.domain}"
+            f"sog-{infrastructure_environment}-{spec.domain}"
         )
 
         if spec.namespace_mode == "domain":

@@ -1,13 +1,8 @@
 name: Platform - Apply
 
+# Platform state includes production resources. Never apply on merge.
+# Manual dispatch must be paired with reviewed plan and environment approval.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "terraform/platform/**"
-      - ".github/workflows/platform-apply.yml"
-
   workflow_dispatch:
 
 permissions:
