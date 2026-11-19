@@ -33,6 +33,26 @@ spec:
         - protocol: TCP
           port: 53
 ---
+# Internal service consumers in the same namespace can reach the HTTP port.
+# Cross-namespace access requires an explicit policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ workload.name }}-allow-same-namespace
+  namespace: {{ workload.namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ workload.name }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: {{ workload.port }}
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
