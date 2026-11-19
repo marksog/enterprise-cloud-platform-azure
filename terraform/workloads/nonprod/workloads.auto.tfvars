@@ -34,4 +34,13 @@ workloads = {
     exposure       = "internal"
     namespace_mode = "dedicated"
   }
+
+  "commerce-test-api" = {
+    domain         = "commerce"
+    image          = "sogplatformacr.azurecr.io/commerce-test-api:v1"
+    port           = 8080
+    size           = "small"
+    exposure       = "internal"
+    namespace_mode = "domain"
+  }
 }

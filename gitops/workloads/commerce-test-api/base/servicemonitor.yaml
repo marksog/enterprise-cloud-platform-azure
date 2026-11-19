@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: commerce-test-api
+  namespace: sog-dev-commerce
+  labels:
+    app.kubernetes.io/name: commerce-test-api
+    release: sog-observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: commerce-test-api
+  endpoints:
+    - port: http
+      path: /metrics/
+      interval: 30s
