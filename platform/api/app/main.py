@@ -264,16 +264,23 @@ def create_application(
 ):
     identity = map_developer_identity(developer)
 
-    # Evaluate policy before any repository creation.
+    # Validate early: image required for platform PR creation.
+    if request.create_platform_pr and not request.image:
+        raise HTTPException(
+            status_code=422,
+            detail="image is required when create_platform_pr is True",
+        )
+
+    # Evaluate policy before any provisioning.
     try:
         decision = evaluate_policy(
             workload={
                 "name": request.name,
                 "domain": request.domain,
                 "environment": request.environment,
-                "size": "small",
-                "namespace_mode": "shared",
-                "exposure": "internal",
+                "size": request.size.value,
+                "namespace_mode": request.namespace_mode.value,
+                "exposure": request.exposure.value,
             },
             identity=identity,
         )
@@ -283,12 +290,20 @@ def create_application(
             detail="Policy engine unavailable; request not approved",
         ) from exc
 
-    policy = PolicyDecision(
-        decision=decision,
-        reasons=[],
-    )
+    policy = PolicyDecision(decision=decision, reasons=[])
 
-    # Denied or approval-required requests must never provision.
+    # Compute derived metadata.
+    if request.namespace_mode.value == "dedicated":
+        namespace = (
+            f"sog-{request.environment}-{request.domain}-{request.name}"
+        )
+    else:
+        namespace = f"sog-{request.environment}-{request.domain}"
+
+    proposed_registry_path = f"sogplatformacr.azurecr.io/{request.name}"
+    gitops_app_name = request.name
+
+    # Denied / approval-required: return early, never provision.
     if decision != "allow":
         return ApplicationResponse(
             application=request.name,
@@ -296,37 +311,148 @@ def create_application(
             environment=request.environment,
             policy=policy,
             dry_run=True,
-            repository_url=None,
+            status=decision,
+            namespace=namespace,
+            proposed_registry_path=proposed_registry_path,
+            gitops_app_name=gitops_app_name,
         )
 
-    # Preview is the safe default.
-    if not request.create_repository:
+    # Pure preview: no create flags set.
+    if not request.create_repository and not request.create_platform_pr:
+        pr_preview = None
+
+        if request.image:
+            try:
+                spec = WorkloadSpec(
+                    name=request.name,
+                    domain=request.domain,
+                    environment=request.environment,
+                    size=request.size.value,
+                    namespace_mode=request.namespace_mode.value,
+                    image=request.image,
+                    port=request.port,
+                    startup_path=request.health.startup_path,
+                    readiness_path=request.health.readiness_path,
+                    liveness_path=request.health.liveness_path,
+                )
+                changes = assembler.build(spec)
+                preview = github.prepare_pull_request(
+                    workload_name=spec.name,
+                    domain=spec.domain,
+                    environment=spec.environment,
+                    changes=changes,
+                )
+                pr_preview = PullRequestPreviewResponse(
+                    repository=github.repository,
+                    branch=preview.branch,
+                    base_branch=preview.base_branch,
+                    title=preview.title,
+                    files=list(preview.files),
+                    dry_run=True,
+                )
+            except (WorkloadValidationError, GitHubChangeError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=422, detail=str(exc)
+                ) from exc
+
         return ApplicationResponse(
             application=request.name,
             domain=request.domain,
             environment=request.environment,
             policy=policy,
             dry_run=True,
-            repository_url=None,
+            status="preview",
+            namespace=namespace,
+            proposed_registry_path=proposed_registry_path,
+            gitops_app_name=gitops_app_name,
+            pull_request=pr_preview,
         )
 
-    try:
-        created = RepositoryFactory(github).create_repository(
-            name=request.name,
-            description=request.description,
-            private=True,
-        )
-    except RepositoryFactoryError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=str(exc),
-        ) from exc
+    # Repository creation.
+    repository_url = None
+    if request.create_repository:
+        try:
+            created = RepositoryFactory(github).create_repository(
+                name=request.name,
+                description=request.description,
+                private=True,
+            )
+            repository_url = created.url
+        except RepositoryFactoryError as exc:
+            raise HTTPException(
+                status_code=502, detail=str(exc)
+            ) from exc
+
+    # Platform PR creation.
+    pull_request_response = None
+    partial_failure_reason = None
+
+    if request.create_platform_pr:
+        try:
+            spec = WorkloadSpec(
+                name=request.name,
+                domain=request.domain,
+                environment=request.environment,
+                size=request.size.value,
+                namespace_mode=request.namespace_mode.value,
+                image=request.image,
+                port=request.port,
+                startup_path=request.health.startup_path,
+                readiness_path=request.health.readiness_path,
+                liveness_path=request.health.liveness_path,
+            )
+            changes = assembler.build(spec)
+            preview = github.prepare_pull_request(
+                workload_name=spec.name,
+                domain=spec.domain,
+                environment=spec.environment,
+                changes=changes,
+            )
+            created_pr = github.create_pull_request(preview, changes)
+            pull_request_response = PullRequestPreviewResponse(
+                repository=github.repository,
+                branch=preview.branch,
+                base_branch=preview.base_branch,
+                title=preview.title,
+                files=list(preview.files),
+                dry_run=False,
+                number=created_pr.number,
+                url=created_pr.url,
+            )
+        except (WorkloadValidationError, GitHubChangeError, ValueError) as exc:
+            if repository_url:
+                # Repository was created but PR failed: partial failure.
+                partial_failure_reason = str(exc)
+            else:
+                raise HTTPException(
+                    status_code=422, detail=str(exc)
+                ) from exc
+
+    # Determine final status.
+    if partial_failure_reason:
+        status = "partial_failure"
+    elif repository_url and pull_request_response:
+        status = "fully_onboarded"
+    elif repository_url:
+        status = "repository_created"
+    elif pull_request_response:
+        status = "platform_pr_created"
+    else:
+        status = "preview"
+
+    dry_run = not (bool(repository_url) or bool(pull_request_response))
 
     return ApplicationResponse(
         application=request.name,
         domain=request.domain,
         environment=request.environment,
         policy=policy,
-        dry_run=False,
-        repository_url=created.url,
+        dry_run=dry_run,
+        status=status,
+        namespace=namespace,
+        proposed_registry_path=proposed_registry_path,
+        gitops_app_name=gitops_app_name,
+        repository_url=repository_url,
+        pull_request=pull_request_response,
+        partial_failure_reason=partial_failure_reason,
     )

@@ -2,6 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
+from types import SimpleNamespace
 
 from app import main
 from app.auth import get_current_developer
@@ -202,3 +203,182 @@ def test_github_failure_returns_502(
 
     assert response.status_code == 502
     assert "GitHub API unavailable" in response.json()["detail"]
+
+
+def test_preview_without_side_effects(
+    client, monkeypatch, application_payload
+):
+    """Image provided, no create flags: dry-run PR preview with zero side effects."""
+    monkeypatch.setattr(main, "evaluate_policy", lambda **kwargs: "allow")
+
+    application_payload["image"] = "sogplatformacr.azurecr.io/catalog-api:v1"
+
+    fake_changes = {
+        "gitops/workloads/catalog-api/base/deployment.yaml": "content"
+    }
+    monkeypatch.setattr(main.assembler, "build", lambda spec: fake_changes)
+
+    fake_preview = SimpleNamespace(
+        branch="platform/onboard-commerce-catalog-api-dev",
+        base_branch="main",
+        title="feat(platform): onboard catalog-api to commerce/dev",
+        body="...",
+        files=("gitops/workloads/catalog-api/base/deployment.yaml",),
+    )
+    monkeypatch.setattr(
+        main.github,
+        "prepare_pull_request",
+        lambda **kw: fake_preview,
+    )
+
+    def forbidden_pr(preview, changes):
+        pytest.fail("PR must not be created during preview")
+
+    monkeypatch.setattr(main.github, "create_pull_request", forbidden_pr)
+
+    def forbidden_repo(self, **kwargs):
+        pytest.fail("Repository must not be created during preview")
+
+    monkeypatch.setattr(
+        main.RepositoryFactory, "create_repository", forbidden_repo
+    )
+
+    response = client.post("/v1/applications", json=application_payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dry_run"] is True
+    assert body["status"] == "preview"
+    assert body["pull_request"] is not None
+    assert body["pull_request"]["dry_run"] is True
+    assert body["repository_url"] is None
+    assert body["proposed_registry_path"] == "sogplatformacr.azurecr.io/catalog-api"
+    assert body["gitops_app_name"] == "catalog-api"
+    assert body["namespace"] == "sog-dev-commerce"
+
+
+def test_platform_pr_requires_image(
+    client, monkeypatch, application_payload
+):
+    """create_platform_pr=True without image must return 422."""
+    application_payload["create_platform_pr"] = True
+    # No image in payload
+
+    response = client.post("/v1/applications", json=application_payload)
+
+    assert response.status_code == 422
+    assert "image" in response.json()["detail"].lower()
+
+
+def test_successful_full_integration(
+    client, monkeypatch, application_payload
+):
+    """create_repository + create_platform_pr both True: fully_onboarded."""
+    monkeypatch.setattr(main, "evaluate_policy", lambda **kwargs: "allow")
+
+    class FakeRepo:
+        url = "https://github.com/sog/catalog-api"
+
+    monkeypatch.setattr(
+        main.RepositoryFactory,
+        "create_repository",
+        lambda self, **kw: FakeRepo(),
+    )
+
+    fake_changes = {
+        "gitops/workloads/catalog-api/base/deployment.yaml": "content"
+    }
+    monkeypatch.setattr(main.assembler, "build", lambda spec: fake_changes)
+
+    fake_preview = SimpleNamespace(
+        branch="platform/onboard-commerce-catalog-api-dev",
+        base_branch="main",
+        title="feat(platform): onboard catalog-api to commerce/dev",
+        body="...",
+        files=("gitops/workloads/catalog-api/base/deployment.yaml",),
+    )
+    monkeypatch.setattr(
+        main.github,
+        "prepare_pull_request",
+        lambda **kw: fake_preview,
+    )
+
+    class FakePR:
+        number = 42
+        url = "https://github.com/sog/platform/pull/42"
+
+    monkeypatch.setattr(
+        main.github,
+        "create_pull_request",
+        lambda preview, changes: FakePR(),
+    )
+
+    application_payload["image"] = "sogplatformacr.azurecr.io/catalog-api:v1"
+    application_payload["create_repository"] = True
+    application_payload["create_platform_pr"] = True
+
+    response = client.post("/v1/applications", json=application_payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dry_run"] is False
+    assert body["status"] == "fully_onboarded"
+    assert body["repository_url"] == FakeRepo.url
+    assert body["pull_request"] is not None
+    assert body["pull_request"]["dry_run"] is False
+    assert body["pull_request"]["number"] == 42
+    assert body["pull_request"]["url"] == FakePR.url
+    assert body["partial_failure_reason"] is None
+
+
+def test_partial_failure_preserves_repository(
+    client, monkeypatch, application_payload
+):
+    """Repository created but PR fails: returns partial_failure, preserves repository URL."""
+    monkeypatch.setattr(main, "evaluate_policy", lambda **kwargs: "allow")
+
+    class FakeRepo:
+        url = "https://github.com/sog/catalog-api"
+
+    monkeypatch.setattr(
+        main.RepositoryFactory,
+        "create_repository",
+        lambda self, **kw: FakeRepo(),
+    )
+
+    fake_changes = {
+        "gitops/workloads/catalog-api/base/deployment.yaml": "content"
+    }
+    monkeypatch.setattr(main.assembler, "build", lambda spec: fake_changes)
+
+    fake_preview = SimpleNamespace(
+        branch="platform/onboard-commerce-catalog-api-dev",
+        base_branch="main",
+        title="feat(platform): onboard catalog-api to commerce/dev",
+        body="...",
+        files=("gitops/workloads/catalog-api/base/deployment.yaml",),
+    )
+    monkeypatch.setattr(
+        main.github,
+        "prepare_pull_request",
+        lambda **kw: fake_preview,
+    )
+
+    def failing_pr(preview, changes):
+        raise main.GitHubChangeError("GitHub API rate limit exceeded")
+
+    monkeypatch.setattr(main.github, "create_pull_request", failing_pr)
+
+    application_payload["image"] = "sogplatformacr.azurecr.io/catalog-api:v1"
+    application_payload["create_repository"] = True
+    application_payload["create_platform_pr"] = True
+
+    response = client.post("/v1/applications", json=application_payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "partial_failure"
+    assert body["dry_run"] is False
+    assert body["repository_url"] == FakeRepo.url
+    assert body["pull_request"] is None
+    assert "rate limit" in body["partial_failure_reason"].lower()

@@ -83,29 +83,6 @@ class WorkloadResponse(BaseModel):
     policy: PolicyDecision
     pull_request: PullRequestPreviewResponse | None = None
 
-class HealthProbeConfig(BaseModel):
-    startup_path: str = "/health"
-    readiness_path: str = "/ready"
-    liveness_path: str = "/health"
-
-    @field_validator(
-        "startup_path",
-        "readiness_path",
-        "liveness_path",
-    )
-    @classmethod
-    def validate_probe_path(cls, value: str) -> str:
-        if (
-            not value.startswith("/")
-            or len(value) > 256
-            or any(character.isspace() for character in value)
-        ):
-            raise ValueError(
-                "Probe path must start with '/', "
-                "contain no whitespace, and be at most 256 characters"
-            )
-
-        return value
 
 class ApplicationRequest(BaseModel):
     name: str = Field(
@@ -117,6 +94,15 @@ class ApplicationRequest(BaseModel):
     environment: str
     description: str = ""
     create_repository: bool = False
+    create_platform_pr: bool = False
+
+    # Optional workload configuration
+    size: WorkloadSize = WorkloadSize.SMALL
+    namespace_mode: NamespaceMode = NamespaceMode.DOMAIN
+    exposure: Exposure = Exposure.INTERNAL
+    image: str | None = None
+    port: int = Field(default=8080, ge=1, le=65535)
+    health: HealthProbeConfig = Field(default_factory=HealthProbeConfig)
 
 
 class ApplicationResponse(BaseModel):
@@ -125,4 +111,10 @@ class ApplicationResponse(BaseModel):
     environment: str
     policy: PolicyDecision
     dry_run: bool
+    status: str
+    namespace: str | None = None
+    proposed_registry_path: str | None = None
+    gitops_app_name: str | None = None
     repository_url: str | None = None
+    pull_request: PullRequestPreviewResponse | None = None
+    partial_failure_reason: str | None = None
