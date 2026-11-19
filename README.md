@@ -141,7 +141,7 @@ A developer can request a FastAPI application, receive a usable repository, push
 - [x] Generate GitOps configuration changes.
 - [x] Support GitHub pull request creation.
 - [x] Validate generated Terraform and Kubernetes configuration.
-- [x] Demonstrate successful application deployment (`inventory-api`).
+- [x] Demonstrate GitOps registration and Kubernetes resource creation for `commerce-test-api` (Argo CD Synced; Pod blocked by unpublished image).
 
 ### Phase 3 — GitHub Repository Factory
 
@@ -173,12 +173,12 @@ A developer can request a FastAPI application, receive a usable repository, push
 
 ### Phase 5 — Image Promotion and GitOps Deployment
 
-**Status: Planned**
+**Status: Partially Implemented**
 
 - [ ] Connect successful CI builds to GitOps updates.
 - [ ] Update application image references automatically.
 - [ ] Support controlled GitOps pull requests.
-- [ ] Trigger Argo CD synchronization.
+- [x] Trigger Argo CD synchronization.
 - [ ] Verify application deployment to AKS.
 - [ ] Support basic deployment rollback.
 
@@ -209,7 +209,7 @@ A developer can request a FastAPI application, receive a usable repository, push
 
 ### Phase 8 — Agentic AI Integration
 
-**Status: Future**
+**Status: Next — AI onboarding POC**
 
 The AI layer will be developed separately and integrated after the core platform workflow is functional.
 
@@ -586,37 +586,30 @@ The platform follows these development principles:
 
 ## Current Development Focus
 
-**Milestone:** GitHub Repository Factory
+**Milestone:** Agentic AI onboarding POC
 
-**Branch:** `feat/application-repository-factory`
+**Branch:** To be created
 
 **Immediate Goal:**
 
-Extend the existing Platform API to create a GitHub repository from a standard FastAPI Golden Path template.
+Add a constrained AI conversational interface that interprets natural-language developer onboarding requests, produces the current structured Platform API payload, asks for explicit human confirmation, and submits only through the existing authenticated and OPA-authorized Platform API. The agent must not directly provision Azure or Kubernetes resources.
 
-The generated repository should contain:
+**Validated POC milestones:**
 
-```text
-catalog-api/
-├── app/
-│   ├── __init__.py
-│   └── main.py
-├── tests/
-│   └── test_health.py
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── Dockerfile
-├── requirements.txt
-└── README.md
-```
+- [x] Platform API generated a GitHub onboarding pull request.
+- [x] Terraform plan for `commerce-test-api`: 3 to add, 0 to change, 0 to destroy.
+- [x] Argo CD registered and synchronized `commerce-test-api`.
+- [x] Kubernetes created the workload Pod in `sog-nonprod-commerce`.
+- [ ] Workload Pod Ready: currently `ImagePullBackOff` because `sogplatformacr.azurecr.io/commerce-test-api:v1` is not available.
+- [ ] Confirm nonproduction Terraform Apply completed successfully; the successful plan alone does not prove apply.
 
-**Acceptance Criteria:**
+**AI POC acceptance criteria:**
 
-- Developer submits an authorized application request.
-- Platform generates a repository from the approved template.
-- Repository includes starter application code and CI/CD workflow.
-- Platform returns the GitHub repository URL.
-- Existing GitOps and workload generation capabilities remain functional.
+- [ ] Interpret a developer's natural-language onboarding request.
+- [ ] Produce a schema-valid structured request for the implemented API.
+- [ ] Require explicit developer confirmation before submission.
+- [ ] Preserve existing authentication, OPA policy evaluation, and GitHub PR review.
+- [ ] Return the generated PR and accurate provisioning status.
+- [ ] Reject unauthorized, ambiguous, and unsupported production requests safely.
 
-**Next Milestone:** CI/CD Factory and Azure Container Registry integration.
+**Deferred:** Application image publishing and healthy Pod verification; GitHub Repository Factory; automated application CI/CD and image promotion.
