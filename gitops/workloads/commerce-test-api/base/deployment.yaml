@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: commerce-test-api
-  namespace: sog-dev-commerce
+  namespace: sog-nonprod-commerce
   labels:
     app.kubernetes.io/name: commerce-test-api
     app.kubernetes.io/managed-by: sog-platform
@@ -63,6 +63,7 @@ spec:
               memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
