@@ -11,7 +11,7 @@ spec:
     path: gitops/workloads/commerce-test-api/overlays/nonprod
   destination:
     server: https://kubernetes.default.svc
-    namespace: sog-dev-commerce
+    namespace: sog-nonprod-commerce
   syncPolicy:
     automated:
       prune: true
