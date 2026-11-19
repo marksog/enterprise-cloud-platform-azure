@@ -7,6 +7,11 @@ on:
       - "terraform/modules/**"
       - ".github/workflows/nonprod-workloads-plan.yml"
 
+# Coordinate PR plans with main-branch applies using the same remote state.
+concurrency:
+  group: nonprod-workloads-terraform-state
+  cancel-in-progress: false
+
 permissions:
   contents: read
   id-token: write
