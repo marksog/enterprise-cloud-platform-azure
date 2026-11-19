@@ -58,7 +58,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -input=false -out=nonprod-workloads.tfplan
+        run: terraform plan -input=false -lock-timeout=10m -out=nonprod-workloads.tfplan
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
