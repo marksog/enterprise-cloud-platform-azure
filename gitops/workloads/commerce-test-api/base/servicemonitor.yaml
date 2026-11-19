@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: commerce-test-api
-  namespace: sog-dev-commerce
+  namespace: sog-nonprod-commerce
   labels:
     app.kubernetes.io/name: commerce-test-api
     release: sog-observability
